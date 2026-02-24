@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { fetchLiveAndRecentMatches } from "@/lib/football-api";
+import crypto from "crypto";
 
 /**
  * GET /api/sync/scores?key=SYNC_SECRET
@@ -15,8 +16,15 @@ import { fetchLiveAndRecentMatches } from "@/lib/football-api";
 export async function GET(request: Request) {
     // ── Auth check ──
     const { searchParams } = new URL(request.url);
-    const key = searchParams.get("key");
-    if (key !== process.env.SYNC_SECRET) {
+    const key = searchParams.get("key") || "";
+    const secret = process.env.SYNC_SECRET || "";
+
+    if (!secret || !key || key.length !== secret.length) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isAuthentic = crypto.timingSafeEqual(Buffer.from(key), Buffer.from(secret));
+    if (!isAuthentic) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
