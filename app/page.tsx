@@ -27,7 +27,7 @@ export default function LandingPage() {
         <LandingNav />
 
         {/* ── HERO CONTENT WRAPPER ── */}
-        <div className="relative z-10 flex flex-1 flex-col justify-center pt-12 md:pt-0">
+        <div className="relative z-10 flex flex-1 flex-col pb-12 pt-16 md:justify-center md:pb-0 md:pt-0">
 
           {/* Title & Tagline (Desktop) */}
           <div className="hidden text-center md:block md:-mt-20">
@@ -42,32 +42,34 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Bottom Panel */}
+          {/* Title & Tagline (Mobile) */}
+          <div className="mt-4 text-center md:hidden">
+            <h1 className="text-6xl font-extrabold tracking-tight text-white">
+              GafferScore
+            </h1>
+            <p className="mt-3 text-[10px] font-light tracking-[0.1em] uppercase text-white/70">
+              Predict the Score. Own the Leaderboard.
+            </p>
+            <p className="mt-2 text-xs text-white/50">
+              Join other football fans
+            </p>
+          </div>
+
+          {/* Spacer to push buttons to the bottom on mobile */}
+          <div className="flex-1 md:hidden" />
+
+          {/* Bottom Panel (Buttons) */}
           <div className="px-6 md:p-0 md:mt-16">
-
-            {/* Title & Tagline (Mobile) */}
-            <div className="mb-8 text-center md:hidden">
-              <h1 className="text-6xl font-extrabold tracking-tight text-white">
-                GafferScore
-              </h1>
-              <p className="mt-3 text-[10px] font-light tracking-[0.1em] uppercase text-white/70">
-                Predict the Score. Own the Leaderboard.
-              </p>
-              <p className="mt-2 text-xs text-white/50">
-                Join other football fans
-              </p>
-            </div>
-
             <div className="mx-auto flex w-full max-w-xs flex-col items-center gap-4">
               <Link
                 href="/auth?mode=signup"
-                className="btn-interactive btn-glow flex min-h-[44px] w-full items-center justify-center rounded-md bg-mint px-6 py-4 text-sm font-bold uppercase tracking-wider text-navy"
+                className="btn-interactive btn-glow flex min-h-[44px] w-full items-center justify-center rounded-md bg-mint px-6 py-4 text-sm font-bold uppercase tracking-wider text-navy active:scale-95 transition-transform duration-200"
               >
                 Sign Up
               </Link>
               <Link
                 href="/auth?mode=login"
-                className="btn-interactive flex min-h-[44px] w-full items-center justify-center rounded-md border-2 border-mint bg-transparent px-6 py-4 text-sm font-bold uppercase tracking-wider text-mint transition-colors hover:bg-mint/10 md:bg-black/20"
+                className="btn-interactive flex min-h-[44px] w-full items-center justify-center rounded-md border-2 border-mint bg-transparent px-6 py-4 text-sm font-bold uppercase tracking-wider text-mint transition-all duration-200 hover:bg-mint/10 active:scale-95 md:bg-black/20"
               >
                 Login
               </Link>
