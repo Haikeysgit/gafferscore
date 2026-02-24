@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export interface MatchCardProps {
     fixtureId: number;
@@ -99,7 +100,13 @@ export default function MatchCard({
     const arrowClass = canEdit ? "text-mint hover:bg-mint/15" : "text-white/15 cursor-not-allowed";
 
     return (
-        <div className={`glass-card w-full rounded-xl overflow-hidden ${borderClass}`}>
+        <motion.div
+            variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 100 } }
+            }}
+            className={`glass-card w-full rounded-xl overflow-hidden ${borderClass}`}
+        >
             {/* ── Status Banner ── */}
             {isLocked && (
                 <div className={`flex items-center justify-center gap-1.5 py-1 text-[9px] font-bold uppercase tracking-[0.2em] ${isLive ? "bg-mint/10 text-mint" : isFinished ? "bg-white/5 text-white/60" : "bg-red-500/20 text-red-400"
@@ -177,7 +184,7 @@ export default function MatchCard({
                             <button
                                 onClick={handleSave}
                                 disabled={saving}
-                                className={`btn-interactive btn-pill w-full py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] ${saved ? "border-2 border-mint/50 bg-transparent text-mint hover:bg-mint/5" : "bg-mint text-navy btn-glow"
+                                className={`btn-interactive btn-pill w-full py-2.5 text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] active:scale-95 ${saved ? "border-2 border-mint/50 bg-transparent text-mint hover:bg-mint/5" : "bg-mint text-navy btn-glow"
                                     } disabled:opacity-50`}
                             >
                                 {saving ? "Saving..." : saved ? "Edit Prediction" : "Save Prediction"}
@@ -196,6 +203,6 @@ export default function MatchCard({
                     <span className="text-[9px] md:text-[11px] text-white/25">Your prediction: {homeScore} - {awayScore}</span>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }

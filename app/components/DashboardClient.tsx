@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
+import { motion } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
 import GameweekNav from "@/app/components/GameweekNav";
 import MatchCard from "@/app/components/MatchCard";
@@ -131,7 +132,18 @@ export default function DashboardClient({
                 )}
 
                 {/* Match Cards - Two column grid on desktop, single column on mobile */}
-                <div className="grid grid-cols-1 gap-3 px-3 pb-12 md:mx-auto md:max-w-6xl md:grid-cols-2 md:gap-4 md:px-6">
+                <motion.div
+                    className="grid grid-cols-1 gap-3 px-3 pb-12 md:mx-auto md:max-w-6xl md:grid-cols-2 md:gap-4 md:px-6"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                            opacity: 1,
+                            transition: { staggerChildren: 0.08 }
+                        }
+                    }}
+                >
                     {fixtures.map((fixture) => {
                         const pred = predMap.get(fixture.id);
                         return (
@@ -156,7 +168,7 @@ export default function DashboardClient({
                             />
                         );
                     })}
-                </div>
+                </motion.div>
             </main>
 
             {/* Footer */}

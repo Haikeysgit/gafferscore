@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { motion } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
 import GameweekNav from "@/app/components/GameweekNav";
 import Footer from "@/app/components/Footer";
@@ -47,7 +48,13 @@ function RankBadge({ rank }: { rank: number }) {
 function PlayerRow({ player, currentUserId }: { player: LeaderboardEntry; currentUserId: string }) {
     const isCurrentUser = player.user_id === currentUserId;
     return (
-        <div className={`glass-card flex items-center rounded-lg px-3 py-3 md:px-4 md:py-3.5 ${isCurrentUser ? "card-active" : "border border-white/5"}`}>
+        <motion.div
+            variants={{
+                hidden: { opacity: 0, y: 15 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 100 } }
+            }}
+            className={`glass-card flex items-center rounded-lg px-3 py-3 md:px-4 md:py-3.5 ${isCurrentUser ? "card-active" : "border border-white/5"}`}
+        >
             <div className="flex w-12 shrink-0 items-center gap-1 md:w-16">
                 <RankBadge rank={player.current_rank} />
                 <TrendArrow current={player.current_rank} previous={player.previous_rank} />
@@ -68,7 +75,7 @@ function PlayerRow({ player, currentUserId }: { player: LeaderboardEntry; curren
                 {Math.floor((player.total_points - player.exact_scores * 30) / 20)}
             </div>
             <div className={`w-16 text-right text-sm font-black md:w-20 md:text-base ${isCurrentUser ? "text-mint" : "text-white"}`}>{player.total_points}</div>
-        </div>
+        </motion.div>
     );
 }
 
@@ -315,11 +322,22 @@ export default function LeaderboardClient({
                         </div>
                     )}
 
-                    <div className="flex flex-col gap-2">
+                    <motion.div
+                        className="flex flex-col gap-2"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                            hidden: { opacity: 0 },
+                            visible: {
+                                opacity: 1,
+                                transition: { staggerChildren: 0.05 }
+                            }
+                        }}
+                    >
                         {entries.map((player) => (
                             <PlayerRow key={player.user_id} player={player} currentUserId={currentUserId} />
                         ))}
-                    </div>
+                    </motion.div>
 
                     {/* Pagination */}
                     {totalPages > 1 && (

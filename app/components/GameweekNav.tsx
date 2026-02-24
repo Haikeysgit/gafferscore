@@ -19,7 +19,7 @@ export default function GameweekNav({
             <button
                 onClick={onPrev}
                 disabled={currentGameweek <= 1}
-                className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/60 disabled:opacity-20 hover:bg-white/10 hover:text-white transition-all"
+                className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/60 disabled:opacity-20 hover:bg-white/10 hover:text-white active:scale-90 transition-all"
                 aria-label="Previous gameweek"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -36,7 +36,7 @@ export default function GameweekNav({
             <button
                 onClick={onNext}
                 disabled={currentGameweek >= totalGameweeks}
-                className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/60 disabled:opacity-20 hover:bg-white/10 hover:text-white transition-all"
+                className="btn-interactive flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/60 disabled:opacity-20 hover:bg-white/10 hover:text-white active:scale-90 transition-all"
                 aria-label="Next gameweek"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
