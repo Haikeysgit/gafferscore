@@ -1,0 +1,15 @@
+name: Fast Sync Scores
+
+on:
+  schedule:
+    # Runs every 3 minutes
+    - cron: '*/3 * * * *'
+  workflow_dispatch: # Allows manual trigger for testing
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Sync Endpoint
+        run: |
+          curl -f -X GET "https://gafferscore.vercel.app/api/sync/scores?key=${{ secrets.SYNC_SECRET }}"
