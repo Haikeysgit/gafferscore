@@ -2,6 +2,14 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+// ── Rate Limiter ──
+// Simple in-memory rate limiter to prevent spamming server actions.
+// Note: In serverless environments (Vercel), this may reset across different edge chunks, 
+// but it is still highly effective at dropping rapid-fire brute force loops from a single connection.
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_MAX_REQUESTS = 5;
+const RATE_LIMIT_WINDOW_MS = 10000; // 10 seconds
+
 // ── Types ──
 export interface GameweekData {
     id: number;
@@ -132,6 +140,18 @@ export async function savePrediction(
     } = await supabase.auth.getUser();
 
     if (!user) return { success: false, error: "Not authenticated" };
+
+    // ── Rate Limiting Check ──
+    const nowMs = Date.now();
+    const userRequests = rateLimitMap.get(user.id) ?? [];
+    const recentRequests = userRequests.filter(t => nowMs - t < RATE_LIMIT_WINDOW_MS);
+
+    if (recentRequests.length >= RATE_LIMIT_MAX_REQUESTS) {
+        return { success: false, error: "Too many requests. Please wait a few seconds." };
+    }
+
+    recentRequests.push(nowMs);
+    rateLimitMap.set(user.id, recentRequests);
 
     // ── 14-day window pre-check (clear error message) ──
     const { data: fixture } = await supabase
