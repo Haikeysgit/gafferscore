@@ -1,0 +1,120 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-navy: #0A192F;
+  --color-navy-light: #112240;
+  --color-mint: #39FF14;
+  --color-gold: #FFD700;
+  --color-silver: #C0C0C0;
+  --color-bronze: #CD7F32;
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  --font-sans: 'Inter', sans-serif;
+}
+
+body {
+  background: var(--color-navy);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Soft button scaling ── */
+.btn-interactive {
+  transition: transform 50ms ease-in-out;
+}
+
+.btn-interactive:active {
+  transform: scale(0.98);
+}
+
+/* ── Pulsing glow for primary CTA ── */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 15px rgba(57, 255, 20, 0.4), 0 0 30px rgba(57, 255, 20, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 25px rgba(57, 255, 20, 0.6), 0 0 50px rgba(57, 255, 20, 0.3);
+  }
+}
+
+.btn-glow {
+  animation: pulse-glow 2.5s ease-in-out infinite;
+}
+
+/* ── Navbar — solid opaque background, no backdrop-blur ── */
+.glass-nav {
+  background: rgba(10, 25, 47, 0.97);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* ── Spaced uppercase nav typography ── */
+.nav-link {
+  font-weight: 300;
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* ── Match / leaderboard card — solid bg, no backdrop-filter ── */
+.glass-card {
+  background: rgba(17, 34, 64, 0.95);
+  transform: translateZ(0);
+}
+
+/* ── Active card glow (pending matches) ── */
+.card-active {
+  border: 2px solid rgba(57, 255, 20, 0.6);
+  box-shadow: 0 0 20px rgba(57, 255, 20, 0.12);
+}
+
+/* ── Locked card (past kickoff) ── */
+.card-locked {
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ── Pill-shaped CTA with smooth transitions ── */
+.btn-pill {
+  border-radius: 9999px;
+  transition: all 250ms ease;
+}
+
+/* ── Team label typography ── */
+.team-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* ── Pinned user row at bottom of leaderboard ── */
+.pinned-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  background: var(--color-navy);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  transform: translateZ(0);
+}
+
+/* ── Pulsing live dot ── */
+@keyframes pulse-live {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+
+.live-dot {
+  animation: pulse-live 1.2s ease-in-out infinite;
+}
