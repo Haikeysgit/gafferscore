@@ -2,8 +2,8 @@ name: Fast Sync Scores
 
 on:
   schedule:
-    # Runs every 3 minutes
-    - cron: '*/3 * * * *'
+    # Runs every 15 minutes
+    - cron: '*/15 * * * *'
   workflow_dispatch: # Allows manual trigger for testing
 
 jobs:
