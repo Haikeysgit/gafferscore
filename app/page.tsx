@@ -27,7 +27,7 @@ export default function LandingPage() {
         <LandingNav />
 
         {/* ── HERO CONTENT WRAPPER ── */}
-        <div className="relative z-10 flex flex-1 flex-col justify-end pt-12 md:justify-center md:pt-0">
+        <div className="relative z-10 flex flex-1 flex-col justify-center pt-12 md:pt-0">
 
           {/* Title & Tagline (Desktop) */}
           <div className="hidden text-center md:block md:-mt-20">
@@ -42,11 +42,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Mobile Spacer to push content down */}
-          <div className="flex-1 md:hidden" />
-
           {/* Bottom Panel */}
-          <div className="pb-12 pt-8 px-6 md:p-0 md:mt-16">
+          <div className="px-6 md:p-0 md:mt-16">
 
             {/* Title & Tagline (Mobile) */}
             <div className="mb-8 text-center md:hidden">
