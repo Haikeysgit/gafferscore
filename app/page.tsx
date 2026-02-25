@@ -27,7 +27,7 @@ export default function LandingPage() {
         <LandingNav />
 
         {/* ── HERO CONTENT WRAPPER ── */}
-        <div className="relative z-10 flex flex-1 flex-col pb-12 pt-16 md:justify-center md:pb-0 md:pt-0">
+        <div className="relative z-10 flex flex-1 flex-col pb-32 pt-16 md:justify-center md:pb-0 md:pt-0">
 
           {/* Title & Tagline (Desktop) */}
           <div className="hidden text-center md:block md:-mt-20">
