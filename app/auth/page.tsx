@@ -24,6 +24,7 @@ function AuthForm() {
         else if (mode === "login") setView("login");
     }, [searchParams]);
 
+    /*
     const handleGoogleLogin = async () => {
         setLoading(true);
         const { error } = await supabase.auth.signInWithOAuth({
@@ -35,6 +36,7 @@ function AuthForm() {
         if (error) setMessage(error.message);
         setLoading(false);
     };
+    */
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -127,7 +129,7 @@ function AuthForm() {
                             : "Enter your email to receive a reset link."}
                 </p>
 
-                {/* Google button */}
+                {/* Google button commented out
                 {view !== "forgot" && (
                     <>
                         <button
@@ -156,7 +158,6 @@ function AuthForm() {
                             Continue with Google
                         </button>
 
-                        {/* Divider */}
                         <div className="mb-5 flex items-center gap-3">
                             <div className="h-px flex-1 bg-white/15" />
                             <span className="text-xs font-light uppercase tracking-[0.1em] text-white/40">
@@ -166,6 +167,7 @@ function AuthForm() {
                         </div>
                     </>
                 )}
+                */}
 
                 {/* Email form */}
                 <form
