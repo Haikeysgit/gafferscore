@@ -74,15 +74,22 @@ function AuthForm() {
         e.preventDefault();
         setLoading(true);
         setMessage("");
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/auth/callback`,
-        });
-        if (error) {
-            setMessage(error.message);
-        } else {
-            setMessage("Password reset link sent to your email.");
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/recovery`,
+            });
+
+            if (error) {
+                setMessage(error.message);
+            } else {
+                setMessage("Password reset link sent to your email.");
+            }
+        } catch (err: any) {
+            setMessage(err.message || "Failed to send reset link. Please try again.");
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (
