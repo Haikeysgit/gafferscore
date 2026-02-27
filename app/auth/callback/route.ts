@@ -15,6 +15,13 @@ export async function GET(request: Request) {
         }
     }
 
+    // SUPABASE BUG BYPASS: Sometimes Supabase email templates completely strip the redirectTo parameter.
+    // However, they ALWAYS include type=recovery. We can use this to infer the user's intent.
+    const type = requestUrl.searchParams.get("type");
+    if (type === "recovery") {
+        next = "/update-password";
+    }
+
     // Default to dashboard
     next = next || "/dashboard";
 
