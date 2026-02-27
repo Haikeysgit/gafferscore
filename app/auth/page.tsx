@@ -59,7 +59,7 @@ function AuthForm() {
             email,
             password,
             options: {
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
+                emailRedirectTo: `${window.location.origin}/auth/callback?next=/set-nickname`,
             },
         });
         if (error) {
