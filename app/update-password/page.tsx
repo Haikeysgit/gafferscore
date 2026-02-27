@@ -41,12 +41,15 @@ export default function UpdatePasswordPage() {
             return;
         }
 
-        setMessage("Password updated successfully!");
+        // Call signOut to clear their recovery session
+        await supabase.auth.signOut();
+
+        setMessage("Password updated successfully! Redirecting...");
         setLoading(false);
 
-        // Optionally redirect after a short delay
+        // Redirect to auth login
         setTimeout(() => {
-            router.push("/dashboard");
+            router.push("/auth");
         }, 2000);
     };
 
