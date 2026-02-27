@@ -35,6 +35,24 @@ export async function GET(request: Request) {
         }
     }
 
-    // If there's an error or no code, redirect to the login page
-    return NextResponse.redirect(`${origin}/auth?error=invalid_auth_code`);
+    // If there's an error from Supabase or no code, redirect to the auth page with the error details
+    const authError = requestUrl.searchParams.get("error");
+    const errorDescription = requestUrl.searchParams.get("error_description");
+
+    // Fallback to a generic error if none was provided in the query string
+    const errorMessage = errorDescription
+        ? encodeURIComponent(errorDescription)
+        : authError
+            ? encodeURIComponent(authError)
+            : "invalid_auth_code";
+
+    const forwardedHost = request.headers.get("x-forwarded-host");
+    const isLocalEnv = process.env.NODE_ENV === "development";
+
+    let redirectBase = requestUrl.origin;
+    if (!isLocalEnv && forwardedHost) {
+        redirectBase = `https://${forwardedHost}`;
+    }
+
+    return NextResponse.redirect(`${redirectBase}/auth?error=${errorMessage}`);
 }
