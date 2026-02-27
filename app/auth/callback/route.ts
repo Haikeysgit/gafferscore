@@ -2,9 +2,21 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-    const { searchParams, origin } = new URL(request.url);
-    const code = searchParams.get("code");
-    const next = searchParams.get("next") ?? "/dashboard";
+    const requestUrl = new URL(request.url);
+    const code = requestUrl.searchParams.get("code");
+
+    // We try to get next from the searchParams. If not found, check the full URL string 
+    // because sometimes the middleware/Vercel mapping drops it from searchParams.
+    let next = requestUrl.searchParams.get("next");
+    if (!next) {
+        const nextMatch = request.url.match(/next=([^&]+)/);
+        if (nextMatch && nextMatch[1]) {
+            next = decodeURIComponent(nextMatch[1]);
+        }
+    }
+
+    // Default to dashboard
+    next = next || "/dashboard";
 
     if (code) {
         const supabase = await createClient();
@@ -14,13 +26,12 @@ export async function GET(request: Request) {
             const forwardedHost = request.headers.get("x-forwarded-host");
             const isLocalEnv = process.env.NODE_ENV === "development";
 
-            if (isLocalEnv) {
-                return NextResponse.redirect(`${origin}${next}`);
-            } else if (forwardedHost) {
-                return NextResponse.redirect(`https://${forwardedHost}${next}`);
-            } else {
-                return NextResponse.redirect(`${origin}${next}`);
+            let redirectBase = requestUrl.origin;
+            if (!isLocalEnv && forwardedHost) {
+                redirectBase = `https://${forwardedHost}`;
             }
+
+            return NextResponse.redirect(`${redirectBase}${next}`);
         }
     }
 
