@@ -57,7 +57,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // ── Nickname gate: check session metadata (zero DB queries) ──
-    if (pathname !== "/set-nickname") {
+    if (pathname !== "/set-nickname" && pathname !== "/update-password") {
         const nickname = user.user_metadata?.nickname;
 
         if (!nickname) {

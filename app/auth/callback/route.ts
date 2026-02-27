@@ -16,5 +16,5 @@ export async function GET(request: Request) {
     }
 
     // If there's an error or no code, redirect to the login page
-    return NextResponse.redirect(`${origin}/login`);
+    return NextResponse.redirect(`${origin}/auth?error=invalid_auth_code`);
 }
