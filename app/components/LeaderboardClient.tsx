@@ -45,8 +45,10 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 // ── Player Row ──
-function PlayerRow({ player, currentUserId }: { player: LeaderboardEntry; currentUserId: string }) {
-    const isCurrentUser = player.user_id === currentUserId;
+function PlayerRow({ player, currentUserId, isAdmin = false }: { player: LeaderboardEntry; currentUserId: string; isAdmin?: boolean }) {
+    // If it's the current user AND they are NOT an admin, they get the highlight styling.
+    const isCurrentUser = player.user_id === currentUserId && !isAdmin;
+
     return (
         <motion.div
             variants={{
@@ -174,6 +176,7 @@ function Pagination({
 interface LeaderboardClientProps {
     currentUserId: string;
     nickname: string;
+    isAdmin: boolean;
     gameweeks: GameweekData[];
     initialGameweekId: number;
     initialEntries: LeaderboardEntry[];
@@ -184,6 +187,7 @@ interface LeaderboardClientProps {
 export default function LeaderboardClient({
     currentUserId,
     nickname,
+    isAdmin,
     gameweeks,
     initialGameweekId,
     initialEntries,
@@ -335,7 +339,7 @@ export default function LeaderboardClient({
                         }}
                     >
                         {entries.map((player) => (
-                            <PlayerRow key={player.user_id} player={player} currentUserId={currentUserId} />
+                            <PlayerRow key={player.user_id} player={player} currentUserId={currentUserId} isAdmin={isAdmin} />
                         ))}
                     </motion.div>
 
@@ -348,10 +352,11 @@ export default function LeaderboardClient({
             </main>
 
             {/* ── Sticky pinned user row — anchored to bottom of viewport ── */}
-            {!userOnPage && userEntry && (
+            {/* If the user is an admin, we never show this pinned row */}
+            {!isAdmin && !userOnPage && userEntry && (
                 <div className="pinned-row px-3 py-2.5 md:px-6">
                     <div className="mx-auto max-w-3xl">
-                        <PlayerRow player={userEntry} currentUserId={currentUserId} />
+                        <PlayerRow player={userEntry} currentUserId={currentUserId} isAdmin={isAdmin} />
                     </div>
                 </div>
             )}

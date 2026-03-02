@@ -63,13 +63,14 @@ export async function getCurrentUser() {
 
     const { data: profile } = await supabase
         .from("users")
-        .select("nickname")
+        .select("nickname, is_admin")
         .eq("id", user.id)
         .single();
 
     return {
         id: user.id,
         nickname: profile?.nickname ?? user.user_metadata?.nickname ?? null,
+        isAdmin: profile?.is_admin ?? false,
     };
 }
 

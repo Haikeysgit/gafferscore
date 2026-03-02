@@ -24,6 +24,7 @@ export default async function LeaderboardPage() {
         <LeaderboardClient
             currentUserId={user.id}
             nickname={user.nickname}
+            isAdmin={user.isAdmin}
             gameweeks={gameweeks}
             initialGameweekId={currentGw?.id ?? 0}
             initialEntries={leaderboardResult.entries}
