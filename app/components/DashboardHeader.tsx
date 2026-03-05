@@ -82,12 +82,12 @@ export default function DashboardHeader({ nickname }: DashboardHeaderProps) {
 
                             {dropdownOpen && (
                                 <div className="absolute right-0 top-full mt-2 z-[60] w-44 overflow-hidden rounded-lg border border-white/10 bg-[#0d1b2a] shadow-xl shadow-black/40">
-                                    <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-xs font-medium text-white/60 transition-colors hover:bg-white/5 hover:text-white">
+                                    <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-xs font-medium text-white/60 transition-all duration-75 hover:bg-white/5 hover:text-white active:scale-95 active:bg-white/5">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
                                         Settings
                                     </Link>
                                     <div className="border-t border-white/5" />
-                                    <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-xs font-medium text-red-400/80 transition-colors hover:bg-red-500/10 hover:text-red-400">
+                                    <button onClick={handleLogout} className="flex w-full items-center gap-3 px-4 py-3 text-xs font-medium text-red-400/80 transition-all duration-75 hover:bg-red-500/10 hover:text-red-400 active:scale-95 active:bg-red-500/10">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                                         Logout
                                     </button>
