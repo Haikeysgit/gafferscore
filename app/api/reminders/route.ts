@@ -1,22 +1,22 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { Resend } from "resend";
+import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Use service role to bypass RLS and access auth.users
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function POST(req: Request) {
-    // ── Auth Guard ──
+    // ── Auth Guard (timing-safe) ──
     const { searchParams } = new URL(req.url);
-    const key = searchParams.get("key");
-    if (key !== process.env.SYNC_SECRET) {
+    const key = searchParams.get("key") || "";
+    const secret = process.env.SYNC_SECRET || "";
+
+    if (!secret || !key || key.length !== secret.length
+        || !crypto.timingSafeEqual(Buffer.from(key), Buffer.from(secret))) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const supabaseAdmin = createAdminClient();
 
     try {
         // ── 1. Find the active gameweek where reminder_sent is false ──
@@ -89,12 +89,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "No users found." });
         }
 
-        // ── 4. Send email via Resend ──
-        const { error: emailError } = await resend.emails.send({
-            from: "GafferScore <onboarding@resend.dev>",
-            to: allEmails,
-            subject: "🚨 Gameweek predictions are closing soon!",
-            html: `
+        // ── 4. Send emails via Resend Batch API (max 100 per batch) ──
+        const emailHtml = `
                 <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0a192f; border-radius: 16px;">
                     <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 16px 0; text-align: center;">
                         🚨 Predictions Are Closing!
@@ -111,10 +107,20 @@ export async function POST(req: Request) {
                         You're receiving this because you have a GafferScore account.
                     </p>
                 </div>
-            `,
-        });
+            `;
 
-        if (emailError) throw emailError;
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < allEmails.length; i += BATCH_SIZE) {
+            const batch = allEmails.slice(i, i + BATCH_SIZE).map((email) => ({
+                from: "GafferScore <onboarding@resend.dev>",
+                to: [email],
+                subject: "🚨 Gameweek predictions are closing soon!",
+                html: emailHtml,
+            }));
+
+            const { error: batchError } = await resend.batch.send(batch);
+            if (batchError) throw batchError;
+        }
 
         // ── 5. Set reminder_sent = true (THE LOCK) ──
         const { error: updateError } = await supabaseAdmin
