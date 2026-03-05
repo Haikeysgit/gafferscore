@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import { motion } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
 import GameweekNav from "@/app/components/GameweekNav";
@@ -44,8 +44,8 @@ function RankBadge({ rank }: { rank: number }) {
     return <span className="flex h-7 w-7 items-center justify-center text-xs font-bold text-white/50">{rank}</span>;
 }
 
-// ── Player Row ──
-function PlayerRow({ player, currentUserId, isAdmin = false }: { player: LeaderboardEntry; currentUserId: string; isAdmin?: boolean }) {
+// ── Player Row (Memoized) ──
+const PlayerRow = React.memo(function PlayerRow({ player, currentUserId, isAdmin = false }: { player: LeaderboardEntry; currentUserId: string; isAdmin?: boolean }) {
     // If it's the current user AND they are NOT an admin, they get the highlight styling.
     const isCurrentUser = player.user_id === currentUserId && !isAdmin;
 
@@ -72,14 +72,12 @@ function PlayerRow({ player, currentUserId, isAdmin = false }: { player: Leaderb
             </div>
             <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">{player.exact_scores}</div>
             <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">
-                {/* Correct outcomes = (total_points - exact_scores*50) / 20 + exact_scores — but we show total_points / 20 as approx */}
-                {/* For now, show total_distance as a proxy since the RPC doesn't return correct_outcomes separately */}
                 {Math.floor((player.total_points - player.exact_scores * 30) / 20)}
             </div>
             <div className={`w-16 text-right text-sm font-black md:w-20 md:text-base ${isCurrentUser ? "text-mint" : "text-white"}`}>{player.total_points}</div>
         </motion.div>
     );
-}
+});
 
 // ── Truncated Pagination ──
 function Pagination({

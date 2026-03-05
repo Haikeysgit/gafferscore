@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function LandingNav() {
@@ -16,24 +17,24 @@ export default function LandingNav() {
 
                 {/* Desktop Links (Hidden on Mobile) */}
                 <div className="hidden items-center gap-6 md:flex">
-                    <a
-                        href="#"
+                    <Link
+                        href="/rules"
                         className="nav-link block px-3 py-2 text-white/70 transition-colors hover:text-mint"
                     >
                         Rules
-                    </a>
-                    <a
-                        href="#"
+                    </Link>
+                    <Link
+                        href="/team"
                         className="nav-link block px-3 py-2 text-white/70 transition-colors hover:text-mint"
                     >
                         Team
-                    </a>
-                    <a
-                        href="#"
+                    </Link>
+                    <Link
+                        href="/contact"
                         className="nav-link block px-3 py-2 text-white/70 transition-colors hover:text-mint"
                     >
                         Contact Us
-                    </a>
+                    </Link>
                 </div>
 
                 {/* Mobile Hamburger Button */}
@@ -121,7 +122,7 @@ export default function LandingNav() {
                                 }}
                             >
                                 <motion.a
-                                    href="#"
+                                    href="/rules"
                                     className="flex items-center text-2xl font-bold text-white transition-colors hover:text-mint active:scale-95"
                                     onClick={() => setIsOpen(false)}
                                     variants={{
@@ -132,7 +133,7 @@ export default function LandingNav() {
                                     Rules
                                 </motion.a>
                                 <motion.a
-                                    href="#"
+                                    href="/team"
                                     className="flex items-center text-2xl font-bold text-white transition-colors hover:text-mint active:scale-95"
                                     onClick={() => setIsOpen(false)}
                                     variants={{
@@ -143,7 +144,7 @@ export default function LandingNav() {
                                     Team
                                 </motion.a>
                                 <motion.a
-                                    href="#"
+                                    href="/contact"
                                     className="flex items-center text-2xl font-bold text-white transition-colors hover:text-mint active:scale-95"
                                     onClick={() => setIsOpen(false)}
                                     variants={{

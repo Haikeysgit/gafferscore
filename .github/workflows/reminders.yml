@@ -1,0 +1,15 @@
+name: Gameweek Reminders
+
+on:
+  schedule:
+    # Runs every day at 09:00 UTC
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allows manual trigger for testing
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Reminder Email
+        run: |
+          curl -f -X POST "https://gafferscore.vercel.app/api/reminders?key=${{ secrets.SYNC_SECRET }}"

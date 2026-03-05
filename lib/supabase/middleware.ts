@@ -38,7 +38,7 @@ export async function updateSession(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
     // ── Public routes: landing page, auth callback, static assets ──
-    const publicRoutes = ["/", "/auth", "/auth/callback", "/auth/recovery", "/rules"];
+    const publicRoutes = ["/", "/auth", "/auth/callback", "/auth/recovery", "/rules", "/team", "/contact"];
     const isPublicRoute =
         publicRoutes.includes(pathname) ||
         pathname.startsWith("/_next") ||
