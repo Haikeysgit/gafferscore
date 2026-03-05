@@ -1,11 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LandingNav() {
     const [isOpen, setIsOpen] = useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            setIsAuthenticated(!!session);
+        });
+    }, []);
 
     return (
         <>
@@ -121,6 +130,20 @@ export default function LandingNav() {
                                     },
                                 }}
                             >
+                                {isAuthenticated && (
+                                    <motion.a
+                                        href="/dashboard"
+                                        className="flex items-center gap-3 text-2xl font-bold text-mint transition-colors hover:text-white active:scale-95"
+                                        onClick={() => setIsOpen(false)}
+                                        variants={{
+                                            hidden: { opacity: 0, y: 20 },
+                                            visible: { opacity: 1, y: 0, transition: { type: "spring" } },
+                                        }}
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+                                        Dashboard
+                                    </motion.a>
+                                )}
                                 <motion.a
                                     href="/rules"
                                     className="flex items-center text-2xl font-bold text-white transition-colors hover:text-mint active:scale-95"

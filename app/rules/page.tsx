@@ -39,10 +39,10 @@ export default function RulesPage() {
                             transition={{ duration: 0.6 }}
                             className="mb-12 text-center"
                         >
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-3">
                                 How It Works
                             </h1>
-                            <p className="text-white/60 max-w-xl mx-auto text-lg md:text-xl font-light">
+                            <p className="text-white/50 max-w-md mx-auto text-[15px] font-light leading-relaxed">
                                 Master the GafferScore rules to climb the ranks and claim ultimate bragging rights.
                             </p>
                         </motion.div>
@@ -64,7 +64,7 @@ export default function RulesPage() {
                                             className="w-full flex items-center justify-between p-6 text-left transition-colors hover:bg-white/5 active:bg-white/10"
                                             aria-expanded={isOpen}
                                         >
-                                            <h2 className="text-2xl md:text-3xl font-semibold text-white tracking-wide">
+                                            <h2 className="text-xl md:text-2xl font-semibold text-white tracking-wide">
                                                 {rule.title}
                                             </h2>
                                             <div className="ml-4 flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-white/10">
@@ -89,7 +89,7 @@ export default function RulesPage() {
                                                     exit={{ height: 0, opacity: 0 }}
                                                     transition={{ duration: 0.4, ease: 'easeInOut' }}
                                                 >
-                                                    <div className="px-6 pb-6 pt-2 text-white/70 text-lg md:text-xl leading-relaxed font-light">
+                                                    <div className="px-6 pb-6 pt-2 text-white/60 text-[15px] md:text-base leading-relaxed font-light">
                                                         {rule.content}
                                                     </div>
                                                 </motion.div>

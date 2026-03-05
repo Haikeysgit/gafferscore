@@ -49,10 +49,10 @@ export default function ContactPage() {
                             transition={{ duration: 0.6 }}
                             className="text-center mb-12"
                         >
-                            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-4">
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white mb-3">
                                 Get in Touch
                             </h1>
-                            <p className="text-white/60 max-w-xl mx-auto text-lg md:text-xl font-light">
+                            <p className="text-white/50 max-w-md mx-auto text-[15px] font-light leading-relaxed">
                                 We value your feedback. Reach out to us publicly or send a direct message.
                             </p>
                         </motion.div>
@@ -68,10 +68,10 @@ export default function ContactPage() {
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-mint/5 to-transparent pointer-events-none"></div>
 
-                                <h2 className="text-2xl font-semibold text-white mb-6 relative z-10 text-center">
+                                <h2 className="text-lg font-semibold text-white mb-4 relative z-10 text-center">
                                     Public Engagement
                                 </h2>
-                                <p className="text-white/60 text-center mb-10 text-lg font-light relative z-10 max-w-sm">
+                                <p className="text-white/50 text-center mb-8 text-[15px] font-light relative z-10 max-w-xs leading-relaxed">
                                     Follow us, mention us, or slide into our DMs on the official GafferScore X page.
                                 </p>
 
@@ -79,9 +79,9 @@ export default function ContactPage() {
                                     href="https://x.com/gafferscore"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="group relative z-10 flex items-center justify-center px-8 py-4 bg-black text-white rounded-full font-semibold text-lg tracking-wide transition-all duration-300 border border-white/20 hover:border-white/50 hover:bg-white/5 active:scale-95 shadow-lg"
+                                    className="group relative z-10 inline-flex items-center gap-2.5 px-6 py-3 rounded-full text-sm font-medium text-white/90 border border-white/15 bg-white/5 transition-all duration-200 hover:bg-white/10 hover:border-white/30 active:scale-95"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" className="mr-3 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" className="group-hover:scale-110 transition-transform duration-200" viewBox="0 0 24 24" fill="currentColor">
                                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                                     </svg>
                                     Follow @GafferScore
@@ -95,7 +95,7 @@ export default function ContactPage() {
                                 transition={{ duration: 0.6, delay: 0.4 }}
                                 className="flex-1 order-2 md:order-2 glass-card rounded-3xl p-8 md:p-12 border border-white/5 bg-navy-light/50 backdrop-blur-md shadow-2xl"
                             >
-                                <h2 className="text-2xl font-semibold text-white mb-6">
+                                <h2 className="text-lg font-semibold text-white mb-4">
                                     Send Feedback
                                 </h2>
 
