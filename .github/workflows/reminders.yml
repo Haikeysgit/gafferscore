@@ -12,4 +12,5 @@ jobs:
     steps:
       - name: Send Reminder Email
         run: |
-          curl -f -X POST "https://gafferscore.vercel.app/api/reminders?key=${{ secrets.SYNC_SECRET }}"
+          curl -f -X POST "https://gafferscore.vercel.app/api/reminders" \
+            -H "Authorization: Bearer ${{ secrets.SYNC_SECRET }}"

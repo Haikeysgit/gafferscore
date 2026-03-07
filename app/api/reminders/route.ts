@@ -5,10 +5,24 @@ import crypto from "crypto";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+// ── In-memory rate limiter (1 request per 60 s) ──
+let lastInvocation = 0;
+const RATE_LIMIT_MS = 60_000;
+
 export async function POST(req: Request) {
-    // ── Auth Guard (timing-safe) ──
-    const { searchParams } = new URL(req.url);
-    const key = searchParams.get("key") || "";
+    // ── Rate-limit guard ──
+    const now = Date.now();
+    if (now - lastInvocation < RATE_LIMIT_MS) {
+        return NextResponse.json(
+            { error: "Too many requests" },
+            { status: 429 },
+        );
+    }
+    lastInvocation = now;
+
+    // ── Auth Guard (timing-safe, header-based) ──
+    const authHeader = req.headers.get("authorization") || "";
+    const key = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : "";
     const secret = process.env.SYNC_SECRET || "";
 
     if (!secret || !key || key.length !== secret.length
@@ -138,6 +152,6 @@ export async function POST(req: Request) {
     } catch (err: unknown) {
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[reminders] Error:", message);
-        return NextResponse.json({ error: message }, { status: 500 });
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
