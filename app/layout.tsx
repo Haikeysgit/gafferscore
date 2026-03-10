@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "GafferScore - Premier League Predictions",
   description:
     "Predict Premier League match scores. Compete with friends on the leaderboard. 50 points per match.",
+  other: {
+    "virtual-protocol-site-verification": "8bb0c28e126015eb8148b077719a4f43",
+  },
 };
 
 export default function RootLayout({
