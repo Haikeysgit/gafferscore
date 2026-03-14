@@ -150,7 +150,7 @@ export async function POST(req: Request) {
         const BATCH_SIZE = 100;
         for (let i = 0; i < allEmails.length; i += BATCH_SIZE) {
             const batch = allEmails.slice(i, i + BATCH_SIZE).map((email) => ({
-                from: "GafferScore <onboarding@resend.dev>",
+                from: "GafferScore <updates@gafferscore.xyz>",
                 to: [email],
                 subject: "🚨 Gameweek predictions are closing soon!",
                 html: emailHtml,
