@@ -30,6 +30,48 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // ── Shared email template ──
+    const emailHtml = `
+                <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0a192f; border-radius: 16px;">
+                    <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 16px 0; text-align: center;">
+                        🚨 Predictions Are Closing!
+                    </h1>
+                    <p style="color: #ffffffb3; font-size: 14px; line-height: 1.7; margin: 0 0 24px 0; text-align: center;">
+                        The next Premier League gameweek kicks off today. Don't leave points on the table and let your rivals climb the leaderboard. Lock in your exact score predictions before the first whistle blows.
+                    </p>
+                    <div style="text-align: center;">
+                        <a href="https://gafferscore.xyz" style="display: inline-block; background-color: #00f5a0; color: #0a192f; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 8px; letter-spacing: 0.5px;">
+                            👉 Predict Now on GafferScore
+                        </a>
+                    </div>
+                    <p style="color: #ffffff40; font-size: 11px; text-align: center; margin-top: 24px;">
+                        You're receiving this because you have a GafferScore account.
+                    </p>
+                </div>
+            `;
+
+    // ── Test Mode: send a single email without gameweek / user checks ──
+    let body: Record<string, unknown> = {};
+    try { body = await req.json(); } catch { /* empty body from cron – ignore */ }
+
+    if (typeof body.testEmail === "string" && body.testEmail.length > 0) {
+        try {
+            const { error: testError } = await resend.emails.send({
+                from: "GafferScore <onboarding@resend.dev>",
+                to: [body.testEmail],
+                subject: "🚨 Gameweek predictions are closing soon!",
+                html: emailHtml,
+            });
+            if (testError) throw testError;
+            return NextResponse.json({ success: true, message: "Test email sent" });
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Unknown error";
+            console.error("[reminders] Test email error:", message);
+            return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+        }
+    }
+
+    // ── Normal production flow ──
     const supabaseAdmin = createAdminClient();
 
     try {
@@ -104,24 +146,6 @@ export async function POST(req: Request) {
         }
 
         // ── 4. Send emails via Resend Batch API (max 100 per batch) ──
-        const emailHtml = `
-                <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 24px; background-color: #0a192f; border-radius: 16px;">
-                    <h1 style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 0 0 16px 0; text-align: center;">
-                        🚨 Predictions Are Closing!
-                    </h1>
-                    <p style="color: #ffffffb3; font-size: 14px; line-height: 1.7; margin: 0 0 24px 0; text-align: center;">
-                        The next Premier League gameweek kicks off today. Don't leave points on the table and let your rivals climb the leaderboard. Lock in your exact score predictions before the first whistle blows.
-                    </p>
-                    <div style="text-align: center;">
-                        <a href="https://gafferscore.xyz" style="display: inline-block; background-color: #00f5a0; color: #0a192f; font-size: 14px; font-weight: 700; text-decoration: none; padding: 14px 32px; border-radius: 8px; letter-spacing: 0.5px;">
-                            👉 Predict Now on GafferScore
-                        </a>
-                    </div>
-                    <p style="color: #ffffff40; font-size: 11px; text-align: center; margin-top: 24px;">
-                        You're receiving this because you have a GafferScore account.
-                    </p>
-                </div>
-            `;
 
         const BATCH_SIZE = 100;
         for (let i = 0; i < allEmails.length; i += BATCH_SIZE) {
@@ -150,8 +174,7 @@ export async function POST(req: Request) {
             emailsSent: allEmails.length,
         });
     } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        console.error("[reminders] Error:", message);
+        console.error("[reminders] RAW ERROR TRACE:", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }

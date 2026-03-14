@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "skills": {
+    "ai-sdk": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "a6614cf7e198ffaeb8be644a44aaf88bceac300f8039fcae355ccfa26245762e"
+    },
+    "code-review": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "561dc15b643c2be6b646f9c90931f7c830027e782c77e4bf49ab7eef95bee451"
+    },
+    "component-analysis": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "6bffd7dad5f5a3579211edb4a31b2432e7b39a09a9bcc854da1b621fcd87ac42"
+    },
+    "nextjs-standards": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "648a2fdcc856282524e6dfd5fb8443cb23b819f36b43d2376686c9b1edfcc41c"
+    },
+    "security-audit": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "e1a259d3d95f2d275f5b4a671e34d3997a949839ead8c6627ba6a3c5fd5f706c"
+    },
+    "spawn-task": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "d36a2303ad02b9af40d7ed218ce8c4121441f77d8185c11585ca2a324d340f66"
+    },
+    "stitch": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "b8dbf34cbb64c81834fe6fe0e1b8e80a2b624674392fb48529310481ed2d1727"
+    },
+    "sync-docs": {
+      "source": "JStaRFilms/VibeCode-Protocol-Suite",
+      "sourceType": "github",
+      "computedHash": "bd2996923a04b4398a72c86a444beb7381cd4b51d7b02d25887fcbacd3cab34f"
+    }
+  }
+}
