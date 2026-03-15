@@ -1,3 +1,5 @@
+import { FIXTURE_STATUSES, type FixtureStatus } from "@/lib/fixture-status";
+
 /**
  * Football-data.org API v4 client with rate limiting.
  * Free tier: 10 requests/minute for Premier League.
@@ -93,25 +95,13 @@ function cleanTeamName(name: string): string {
 
 
 // ── Status Mapping ──
-function mapStatus(apiStatus: string): "pending" | "live" | "finished" {
-    switch (apiStatus) {
-        case "IN_PLAY":
-        case "PAUSED":
-        case "HALFTIME":
-        case "EXTRA_TIME":
-        case "PENALTY_SHOOTOUT":
-            return "live";
-        case "FINISHED":
-        case "AWARDED":
-            return "finished";
-        case "SCHEDULED":
-        case "TIMED":
-        case "POSTPONED":
-        case "CANCELLED":
-        case "SUSPENDED":
-        default:
-            return "pending";
+function mapStatus(apiStatus: string): FixtureStatus {
+    if (FIXTURE_STATUSES.includes(apiStatus as FixtureStatus)) {
+        return apiStatus as FixtureStatus;
     }
+
+    console.warn(`[football-api] Unknown status "${apiStatus}" received. Falling back to SCHEDULED.`);
+    return "SCHEDULED";
 }
 
 
@@ -138,7 +128,7 @@ export interface ParsedFixture {
     home_logo: string;
     away_logo: string;
     kickoff_time: string;
-    status: "pending" | "live" | "finished";
+    status: FixtureStatus;
     home_score: number | null;
     away_score: number | null;
 }

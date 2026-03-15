@@ -83,72 +83,72 @@ SELECT setval('gameweeks_id_seq', 18);
 -- ── Step 3: Fixtures ──
 -- GW14 (finished)
 INSERT INTO public.fixtures (id, gameweek_id, home_team, away_team, home_short, away_short, kickoff_time, status, home_score, away_score) VALUES
-  (1,  14, 'Arsenal',          'Chelsea',           'ARS','CHE', '2026-01-17 15:00+00', 'finished', 2, 1),
-  (2,  14, 'Manchester City',  'Liverpool',         'MCI','LIV', '2026-01-17 17:30+00', 'finished', 1, 1),
-  (3,  14, 'Tottenham',        'Manchester United',  'TOT','MUN', '2026-01-18 14:00+00', 'finished', 3, 0),
-  (4,  14, 'Newcastle United', 'Aston Villa',       'NEW','AVL', '2026-01-18 14:00+00', 'finished', 2, 2),
-  (5,  14, 'Brighton',         'West Ham',          'BHA','WHU', '2026-01-18 16:30+00', 'finished', 1, 0),
-  (6,  14, 'Everton',          'Wolverhampton',     'EVE','WOL', '2026-01-19 14:00+00', 'finished', 0, 1),
-  (7,  14, 'Fulham',           'Crystal Palace',    'FUL','CRY', '2026-01-19 14:00+00', 'finished', 1, 1),
-  (8,  14, 'Bournemouth',      'Nottingham Forest', 'BOU','NFO', '2026-01-19 14:00+00', 'finished', 2, 3),
-  (9,  14, 'Brentford',        'Leicester City',    'BRE','LEI', '2026-01-19 16:30+00', 'finished', 4, 1),
-  (10, 14, 'Ipswich Town',     'Southampton',       'IPS','SOU', '2026-01-19 14:00+00', 'finished', 1, 0)
+  (1,  14, 'Arsenal',          'Chelsea',           'ARS','CHE', '2026-01-17 15:00+00', 'FINISHED', 2, 1),
+  (2,  14, 'Manchester City',  'Liverpool',         'MCI','LIV', '2026-01-17 17:30+00', 'FINISHED', 1, 1),
+  (3,  14, 'Tottenham',        'Manchester United',  'TOT','MUN', '2026-01-18 14:00+00', 'FINISHED', 3, 0),
+  (4,  14, 'Newcastle United', 'Aston Villa',       'NEW','AVL', '2026-01-18 14:00+00', 'FINISHED', 2, 2),
+  (5,  14, 'Brighton',         'West Ham',          'BHA','WHU', '2026-01-18 16:30+00', 'FINISHED', 1, 0),
+  (6,  14, 'Everton',          'Wolverhampton',     'EVE','WOL', '2026-01-19 14:00+00', 'FINISHED', 0, 1),
+  (7,  14, 'Fulham',           'Crystal Palace',    'FUL','CRY', '2026-01-19 14:00+00', 'FINISHED', 1, 1),
+  (8,  14, 'Bournemouth',      'Nottingham Forest', 'BOU','NFO', '2026-01-19 14:00+00', 'FINISHED', 2, 3),
+  (9,  14, 'Brentford',        'Leicester City',    'BRE','LEI', '2026-01-19 16:30+00', 'FINISHED', 4, 1),
+  (10, 14, 'Ipswich Town',     'Southampton',       'IPS','SOU', '2026-01-19 14:00+00', 'FINISHED', 1, 0)
 ON CONFLICT (id) DO NOTHING;
 
 -- GW15 (finished)
 INSERT INTO public.fixtures (id, gameweek_id, home_team, away_team, home_short, away_short, kickoff_time, status, home_score, away_score) VALUES
-  (11, 15, 'Chelsea',          'Arsenal',           'CHE','ARS', '2026-01-24 15:00+00', 'finished', 0, 1),
-  (12, 15, 'Liverpool',        'Manchester City',   'LIV','MCI', '2026-01-24 17:30+00', 'finished', 2, 0),
-  (13, 15, 'Manchester United','Tottenham',          'MUN','TOT', '2026-01-25 14:00+00', 'finished', 1, 2),
-  (14, 15, 'Aston Villa',      'Newcastle United',  'AVL','NEW', '2026-01-25 14:00+00', 'finished', 3, 1),
-  (15, 15, 'West Ham',         'Brighton',          'WHU','BHA', '2026-01-25 16:30+00', 'finished', 2, 2),
-  (16, 15, 'Wolverhampton',    'Everton',           'WOL','EVE', '2026-01-26 14:00+00', 'finished', 1, 0),
-  (17, 15, 'Crystal Palace',   'Fulham',            'CRY','FUL', '2026-01-26 14:00+00', 'finished', 0, 0),
-  (18, 15, 'Nottingham Forest','Bournemouth',        'NFO','BOU', '2026-01-26 14:00+00', 'finished', 1, 1),
-  (19, 15, 'Leicester City',   'Brentford',         'LEI','BRE', '2026-01-26 16:30+00', 'finished', 0, 2),
-  (20, 15, 'Southampton',      'Ipswich Town',      'SOU','IPS', '2026-01-26 14:00+00', 'finished', 1, 3)
+  (11, 15, 'Chelsea',          'Arsenal',           'CHE','ARS', '2026-01-24 15:00+00', 'FINISHED', 0, 1),
+  (12, 15, 'Liverpool',        'Manchester City',   'LIV','MCI', '2026-01-24 17:30+00', 'FINISHED', 2, 0),
+  (13, 15, 'Manchester United','Tottenham',          'MUN','TOT', '2026-01-25 14:00+00', 'FINISHED', 1, 2),
+  (14, 15, 'Aston Villa',      'Newcastle United',  'AVL','NEW', '2026-01-25 14:00+00', 'FINISHED', 3, 1),
+  (15, 15, 'West Ham',         'Brighton',          'WHU','BHA', '2026-01-25 16:30+00', 'FINISHED', 2, 2),
+  (16, 15, 'Wolverhampton',    'Everton',           'WOL','EVE', '2026-01-26 14:00+00', 'FINISHED', 1, 0),
+  (17, 15, 'Crystal Palace',   'Fulham',            'CRY','FUL', '2026-01-26 14:00+00', 'FINISHED', 0, 0),
+  (18, 15, 'Nottingham Forest','Bournemouth',        'NFO','BOU', '2026-01-26 14:00+00', 'FINISHED', 1, 1),
+  (19, 15, 'Leicester City',   'Brentford',         'LEI','BRE', '2026-01-26 16:30+00', 'FINISHED', 0, 2),
+  (20, 15, 'Southampton',      'Ipswich Town',      'SOU','IPS', '2026-01-26 14:00+00', 'FINISHED', 1, 3)
 ON CONFLICT (id) DO NOTHING;
 
 -- GW16 (finished)
 INSERT INTO public.fixtures (id, gameweek_id, home_team, away_team, home_short, away_short, kickoff_time, status, home_score, away_score) VALUES
-  (21, 16, 'Arsenal',          'Tottenham',         'ARS','TOT', '2026-01-31 15:00+00', 'finished', 2, 0),
-  (22, 16, 'Manchester City',  'Chelsea',           'MCI','CHE', '2026-01-31 17:30+00', 'finished', 3, 1),
-  (23, 16, 'Liverpool',        'Manchester United',  'LIV','MUN', '2026-02-01 14:00+00', 'finished', 4, 0),
-  (24, 16, 'Newcastle United', 'Brighton',          'NEW','BHA', '2026-02-01 14:00+00', 'finished', 1, 1),
-  (25, 16, 'Aston Villa',      'West Ham',          'AVL','WHU', '2026-02-01 16:30+00', 'finished', 2, 0),
-  (26, 16, 'Everton',          'Fulham',            'EVE','FUL', '2026-02-02 14:00+00', 'finished', 1, 2),
-  (27, 16, 'Wolverhampton',    'Crystal Palace',    'WOL','CRY', '2026-02-02 14:00+00', 'finished', 0, 0),
-  (28, 16, 'Bournemouth',      'Brentford',         'BOU','BRE', '2026-02-02 14:00+00', 'finished', 1, 1),
-  (29, 16, 'Nottingham Forest','Leicester City',     'NFO','LEI', '2026-02-02 16:30+00', 'finished', 2, 1),
-  (30, 16, 'Ipswich Town',     'Southampton',       'IPS','SOU', '2026-02-02 14:00+00', 'finished', 0, 0)
+  (21, 16, 'Arsenal',          'Tottenham',         'ARS','TOT', '2026-01-31 15:00+00', 'FINISHED', 2, 0),
+  (22, 16, 'Manchester City',  'Chelsea',           'MCI','CHE', '2026-01-31 17:30+00', 'FINISHED', 3, 1),
+  (23, 16, 'Liverpool',        'Manchester United',  'LIV','MUN', '2026-02-01 14:00+00', 'FINISHED', 4, 0),
+  (24, 16, 'Newcastle United', 'Brighton',          'NEW','BHA', '2026-02-01 14:00+00', 'FINISHED', 1, 1),
+  (25, 16, 'Aston Villa',      'West Ham',          'AVL','WHU', '2026-02-01 16:30+00', 'FINISHED', 2, 0),
+  (26, 16, 'Everton',          'Fulham',            'EVE','FUL', '2026-02-02 14:00+00', 'FINISHED', 1, 2),
+  (27, 16, 'Wolverhampton',    'Crystal Palace',    'WOL','CRY', '2026-02-02 14:00+00', 'FINISHED', 0, 0),
+  (28, 16, 'Bournemouth',      'Brentford',         'BOU','BRE', '2026-02-02 14:00+00', 'FINISHED', 1, 1),
+  (29, 16, 'Nottingham Forest','Leicester City',     'NFO','LEI', '2026-02-02 16:30+00', 'FINISHED', 2, 1),
+  (30, 16, 'Ipswich Town',     'Southampton',       'IPS','SOU', '2026-02-02 14:00+00', 'FINISHED', 0, 0)
 ON CONFLICT (id) DO NOTHING;
 
 -- GW17 (finished)
 INSERT INTO public.fixtures (id, gameweek_id, home_team, away_team, home_short, away_short, kickoff_time, status, home_score, away_score) VALUES
-  (31, 17, 'Chelsea',          'Liverpool',         'CHE','LIV', '2026-02-07 15:00+00', 'finished', 1, 3),
-  (32, 17, 'Tottenham',        'Manchester City',   'TOT','MCI', '2026-02-07 17:30+00', 'finished', 2, 2),
-  (33, 17, 'Manchester United','Arsenal',            'MUN','ARS', '2026-02-08 14:00+00', 'finished', 0, 1),
-  (34, 17, 'Brighton',         'Aston Villa',       'BHA','AVL', '2026-02-08 14:00+00', 'finished', 3, 2),
-  (35, 17, 'West Ham',         'Newcastle United',  'WHU','NEW', '2026-02-08 16:30+00', 'finished', 0, 2),
-  (36, 17, 'Fulham',           'Everton',           'FUL','EVE', '2026-02-09 14:00+00', 'finished', 2, 0),
-  (37, 17, 'Crystal Palace',   'Wolverhampton',     'CRY','WOL', '2026-02-09 14:00+00', 'finished', 1, 0),
-  (38, 17, 'Brentford',        'Bournemouth',       'BRE','BOU', '2026-02-09 14:00+00', 'finished', 2, 1),
-  (39, 17, 'Leicester City',   'Nottingham Forest', 'LEI','NFO', '2026-02-09 16:30+00', 'finished', 1, 4),
-  (40, 17, 'Southampton',      'Ipswich Town',      'SOU','IPS', '2026-02-09 14:00+00', 'finished', 2, 2)
+  (31, 17, 'Chelsea',          'Liverpool',         'CHE','LIV', '2026-02-07 15:00+00', 'FINISHED', 1, 3),
+  (32, 17, 'Tottenham',        'Manchester City',   'TOT','MCI', '2026-02-07 17:30+00', 'FINISHED', 2, 2),
+  (33, 17, 'Manchester United','Arsenal',            'MUN','ARS', '2026-02-08 14:00+00', 'FINISHED', 0, 1),
+  (34, 17, 'Brighton',         'Aston Villa',       'BHA','AVL', '2026-02-08 14:00+00', 'FINISHED', 3, 2),
+  (35, 17, 'West Ham',         'Newcastle United',  'WHU','NEW', '2026-02-08 16:30+00', 'FINISHED', 0, 2),
+  (36, 17, 'Fulham',           'Everton',           'FUL','EVE', '2026-02-09 14:00+00', 'FINISHED', 2, 0),
+  (37, 17, 'Crystal Palace',   'Wolverhampton',     'CRY','WOL', '2026-02-09 14:00+00', 'FINISHED', 1, 0),
+  (38, 17, 'Brentford',        'Bournemouth',       'BRE','BOU', '2026-02-09 14:00+00', 'FINISHED', 2, 1),
+  (39, 17, 'Leicester City',   'Nottingham Forest', 'LEI','NFO', '2026-02-09 16:30+00', 'FINISHED', 1, 4),
+  (40, 17, 'Southampton',      'Ipswich Town',      'SOU','IPS', '2026-02-09 14:00+00', 'FINISHED', 2, 2)
 ON CONFLICT (id) DO NOTHING;
 
 -- GW18 (current — future kickoffs, pending status)
 INSERT INTO public.fixtures (id, gameweek_id, home_team, away_team, home_short, away_short, kickoff_time, status) VALUES
-  (41, 18, 'Arsenal',          'Manchester City',   'ARS','MCI', '2026-02-28 15:00+00', 'pending'),
-  (42, 18, 'Liverpool',        'Chelsea',           'LIV','CHE', '2026-02-28 17:30+00', 'pending'),
-  (43, 18, 'Tottenham',        'Brighton',          'TOT','BHA', '2026-03-01 14:00+00', 'pending'),
-  (44, 18, 'Manchester United','Newcastle United',   'MUN','NEW', '2026-03-01 14:00+00', 'pending'),
-  (45, 18, 'Aston Villa',      'Everton',           'AVL','EVE', '2026-03-01 16:30+00', 'pending'),
-  (46, 18, 'West Ham',         'Fulham',            'WHU','FUL', '2026-03-02 14:00+00', 'pending'),
-  (47, 18, 'Wolverhampton',    'Bournemouth',       'WOL','BOU', '2026-03-02 14:00+00', 'pending'),
-  (48, 18, 'Crystal Palace',   'Brentford',         'CRY','BRE', '2026-03-02 14:00+00', 'pending'),
-  (49, 18, 'Nottingham Forest','Southampton',        'NFO','SOU', '2026-03-02 16:30+00', 'pending'),
-  (50, 18, 'Ipswich Town',     'Leicester City',    'IPS','LEI', '2026-03-02 14:00+00', 'pending')
+  (41, 18, 'Arsenal',          'Manchester City',   'ARS','MCI', '2026-02-28 15:00+00', 'SCHEDULED'),
+  (42, 18, 'Liverpool',        'Chelsea',           'LIV','CHE', '2026-02-28 17:30+00', 'SCHEDULED'),
+  (43, 18, 'Tottenham',        'Brighton',          'TOT','BHA', '2026-03-01 14:00+00', 'SCHEDULED'),
+  (44, 18, 'Manchester United','Newcastle United',   'MUN','NEW', '2026-03-01 14:00+00', 'SCHEDULED'),
+  (45, 18, 'Aston Villa',      'Everton',           'AVL','EVE', '2026-03-01 16:30+00', 'SCHEDULED'),
+  (46, 18, 'West Ham',         'Fulham',            'WHU','FUL', '2026-03-02 14:00+00', 'SCHEDULED'),
+  (47, 18, 'Wolverhampton',    'Bournemouth',       'WOL','BOU', '2026-03-02 14:00+00', 'SCHEDULED'),
+  (48, 18, 'Crystal Palace',   'Brentford',         'CRY','BRE', '2026-03-02 14:00+00', 'SCHEDULED'),
+  (49, 18, 'Nottingham Forest','Southampton',        'NFO','SOU', '2026-03-02 16:30+00', 'SCHEDULED'),
+  (50, 18, 'Ipswich Town',     'Leicester City',    'IPS','LEI', '2026-03-02 14:00+00', 'SCHEDULED')
 ON CONFLICT (id) DO NOTHING;
 
 -- Reset fixture sequence
@@ -173,7 +173,7 @@ BEGIN
     FOR v_fixture IN
       SELECT id, home_score, away_score
       FROM public.fixtures
-      WHERE status = 'finished'
+      WHERE status = 'FINISHED'
     LOOP
       -- Generate random predictions (0-4 range for realism)
       v_pred_h := floor(random() * 5)::INTEGER;

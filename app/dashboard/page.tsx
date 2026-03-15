@@ -47,7 +47,7 @@ export default async function DashboardPage() {
                 .from("fixtures")
                 .select("id")
                 .eq("gameweek_id", gw.id)
-                .eq("status", "finished")
+                .in("status", ["FINISHED", "AWARDED"])
                 .limit(1);
 
             if (finishedFixtures && finishedFixtures.length > 0) {

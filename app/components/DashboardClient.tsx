@@ -14,6 +14,7 @@ import {
     getUserPredictions,
     savePrediction,
 } from "@/lib/actions";
+import { isFixtureFullTime, isFixtureLive } from "@/lib/fixture-status";
 
 interface DashboardClientProps {
     nickname: string;
@@ -36,7 +37,7 @@ export default function DashboardClient({
     const [isPending, startTransition] = useTransition();
 
     // ── Live score polling: refresh fixtures every 60s when matches are live ──
-    const hasLiveMatches = fixtures.some((f) => f.status === "live");
+    const hasLiveMatches = fixtures.some((f) => isFixtureLive(f.status));
 
     useEffect(() => {
         if (!hasLiveMatches) return;
@@ -163,7 +164,7 @@ export default function DashboardClient({
                                 initialHomeScore={pred ? pred.predicted_home_score : 0}
                                 initialAwayScore={pred ? pred.predicted_away_score : 0}
                                 initialSaved={!!pred}
-                                pointsEarned={pred && fixture.status === "finished" ? pred.points_earned : undefined}
+                                pointsEarned={pred && isFixtureFullTime(fixture.status) ? pred.points_earned : undefined}
                                 onSave={handleSave}
                             />
                         );

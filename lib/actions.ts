@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { FixtureStatus } from "@/lib/fixture-status";
 
 // ── Rate Limiter ──
 // Simple in-memory rate limiter to prevent spamming server actions.
@@ -29,7 +30,7 @@ export interface FixtureData {
     home_logo: string | null;
     away_logo: string | null;
     kickoff_time: string;
-    status: "pending" | "live" | "finished";
+    status: FixtureStatus;
     home_score: number | null;
     away_score: number | null;
 }
