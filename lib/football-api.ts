@@ -6,14 +6,11 @@ import { FIXTURE_STATUSES, type FixtureStatus } from "@/lib/fixture-status";
  */
 
 const BASE_URL = "https://api.football-data.org/v4";
-const PL_CODE = "PL"; // Premier League competition code
+const PL_CODE = "PL";
 
-// ── 14-Day Prediction Window (milliseconds) ──
 export const PREDICTION_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 export const PREDICTION_WINDOW_DAYS = 14;
 
-// ── Rate Limiter ──
-// Simple token bucket: max 9 requests per 60 seconds (leaving 1 buffer)
 let requestTimestamps: number[] = [];
 const MAX_REQUESTS = 9;
 const WINDOW_MS = 60_000;
@@ -22,43 +19,38 @@ async function rateLimitedFetch(url: string): Promise<Response> {
     const apiKey = process.env.FOOTBALL_DATA_API_KEY;
     if (!apiKey) throw new Error("Missing FOOTBALL_DATA_API_KEY");
 
-    // Clean old timestamps
     const now = Date.now();
-    requestTimestamps = requestTimestamps.filter((t) => now - t < WINDOW_MS);
+    requestTimestamps = requestTimestamps.filter((timestamp) => now - timestamp < WINDOW_MS);
 
-    // If at limit, wait until the oldest request expires
     if (requestTimestamps.length >= MAX_REQUESTS) {
         const waitMs = WINDOW_MS - (now - requestTimestamps[0]) + 100;
         console.log(`[football-api] Rate limit reached, waiting ${waitMs}ms...`);
         await new Promise((resolve) => setTimeout(resolve, waitMs));
-        requestTimestamps = requestTimestamps.filter((t) => Date.now() - t < WINDOW_MS);
+        requestTimestamps = requestTimestamps.filter((timestamp) => Date.now() - timestamp < WINDOW_MS);
     }
 
     requestTimestamps.push(Date.now());
 
-    const res = await fetch(url, {
+    const response = await fetch(url, {
         headers: { "X-Auth-Token": apiKey },
         cache: "no-store",
     });
 
-    if (res.status === 429) {
-        // API rate limit hit — wait 60s and retry once
+    if (response.status === 429) {
         console.log("[football-api] 429 received, backing off 60s...");
         await new Promise((resolve) => setTimeout(resolve, 60_000));
         requestTimestamps = [];
         return rateLimitedFetch(url);
     }
 
-    if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`football-data.org ${res.status}: ${body}`);
+    if (!response.ok) {
+        const body = await response.text();
+        throw new Error(`football-data.org ${response.status}: ${body}`);
     }
 
-    return res;
+    return response;
 }
 
-
-// ── Premier League Team Short Codes ──
 const TEAM_SHORT_CODES: Record<string, string> = {
     "Arsenal FC": "ARS",
     "Aston Villa FC": "AVL",
@@ -93,8 +85,6 @@ function cleanTeamName(name: string): string {
         .replace(/ & Hove Albion$/, "");
 }
 
-
-// ── Status Mapping ──
 function mapStatus(apiStatus: string): FixtureStatus {
     if (FIXTURE_STATUSES.includes(apiStatus as FixtureStatus)) {
         return apiStatus as FixtureStatus;
@@ -104,8 +94,10 @@ function mapStatus(apiStatus: string): FixtureStatus {
     return "SCHEDULED";
 }
 
+function formatApiDate(date: Date): string {
+    return date.toISOString().split("T")[0];
+}
 
-// ── Types ──
 export interface APIMatch {
     id: number;
     matchday: number;
@@ -140,106 +132,73 @@ export interface SeasonInfo {
     currentMatchday: number;
 }
 
+function parseMatches(matches: APIMatch[] = []): ParsedFixture[] {
+    return matches.map((match) => ({
+        api_match_id: match.id,
+        matchday: match.matchday,
+        home_team: cleanTeamName(match.homeTeam.name),
+        away_team: cleanTeamName(match.awayTeam.name),
+        home_short: getShortCode(match.homeTeam.name),
+        away_short: getShortCode(match.awayTeam.name),
+        home_logo: match.homeTeam.crest || "",
+        away_logo: match.awayTeam.crest || "",
+        kickoff_time: match.utcDate,
+        status: mapStatus(match.status),
+        home_score: match.score.fullTime.home,
+        away_score: match.score.fullTime.away,
+    }));
+}
 
-// ── API Methods ──
-
-/**
- * Fetch the authoritative current matchday from the Competition endpoint.
- * This is the API anchor — it returns the official league matchday,
- * unaffected by rescheduled matches.
- */
 export async function fetchCurrentMatchday(): Promise<number> {
-    const res = await rateLimitedFetch(
-        `${BASE_URL}/competitions/${PL_CODE}`
-    );
-    const data = await res.json();
+    const response = await rateLimitedFetch(`${BASE_URL}/competitions/${PL_CODE}`);
+    const data = await response.json();
     const matchday = data.currentSeason?.currentMatchday;
-    if (!matchday) throw new Error("Could not determine currentMatchday from Competition endpoint");
+
+    if (!matchday) {
+        throw new Error("Could not determine currentMatchday from Competition endpoint");
+    }
+
     console.log(`[football-api] Competition endpoint reports currentMatchday: ${matchday}`);
     return matchday;
 }
 
-/**
- * Fetch all matches for the current PL season.
- * Returns parsed fixtures. The currentMatchday should be fetched
- * separately via fetchCurrentMatchday() (API anchor).
- */
 export async function fetchAllMatches(): Promise<ParsedFixture[]> {
-    const res = await rateLimitedFetch(
-        `${BASE_URL}/competitions/${PL_CODE}/matches`
-    );
-    const data = await res.json();
-
-    return (data.matches || []).map((m: APIMatch) => ({
-        api_match_id: m.id,
-        matchday: m.matchday,
-        home_team: cleanTeamName(m.homeTeam.name),
-        away_team: cleanTeamName(m.awayTeam.name),
-        home_short: getShortCode(m.homeTeam.name),
-        away_short: getShortCode(m.awayTeam.name),
-        home_logo: m.homeTeam.crest || "",
-        away_logo: m.awayTeam.crest || "",
-        kickoff_time: m.utcDate,
-        status: mapStatus(m.status),
-        home_score: m.score.fullTime.home,
-        away_score: m.score.fullTime.away,
-    }));
+    const response = await rateLimitedFetch(`${BASE_URL}/competitions/${PL_CODE}/matches`);
+    const data = await response.json();
+    return parseMatches(data.matches || []);
 }
 
-/**
- * Fetch matches for a specific matchday range (for live score updates).
- */
 export async function fetchMatchdayMatches(matchday: number): Promise<ParsedFixture[]> {
-    const res = await rateLimitedFetch(
-        `${BASE_URL}/competitions/${PL_CODE}/matches?matchday=${matchday}`
+    const response = await rateLimitedFetch(
+        `${BASE_URL}/competitions/${PL_CODE}/matches?matchday=${matchday}`,
     );
-    const data = await res.json();
-
-    return (data.matches || []).map((m: APIMatch) => ({
-        api_match_id: m.id,
-        matchday: m.matchday,
-        home_team: cleanTeamName(m.homeTeam.name),
-        away_team: cleanTeamName(m.awayTeam.name),
-        home_short: getShortCode(m.homeTeam.name),
-        away_short: getShortCode(m.awayTeam.name),
-        home_logo: m.homeTeam.crest || "",
-        away_logo: m.awayTeam.crest || "",
-        kickoff_time: m.utcDate,
-        status: mapStatus(m.status),
-        home_score: m.score.fullTime.home,
-        away_score: m.score.fullTime.away,
-    }));
+    const data = await response.json();
+    return parseMatches(data.matches || []);
 }
 
 /**
- * Fetch only live + recently finished matches (for the scores-only endpoint).
+ * Fetch fixtures in a rolling Yesterday/Today/Tomorrow window so fast syncs
+ * catch late score corrections and next-day postponement updates.
  */
-export async function fetchLiveAndRecentMatches(): Promise<ParsedFixture[]> {
-    // Fetch matches from today and yesterday to catch recently finished
+export async function fetchRollingWindowMatches(): Promise<ParsedFixture[]> {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const dateFrom = yesterday.toISOString().split("T")[0];
-    const dateTo = today.toISOString().split("T")[0];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const res = await rateLimitedFetch(
-        `${BASE_URL}/competitions/${PL_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`
+    const dateFrom = formatApiDate(yesterday);
+    const dateTo = formatApiDate(tomorrow);
+
+    const response = await rateLimitedFetch(
+        `${BASE_URL}/competitions/${PL_CODE}/matches?dateFrom=${dateFrom}&dateTo=${dateTo}`,
     );
-    const data = await res.json();
+    const data = await response.json();
 
-    return (data.matches || []).map((m: APIMatch) => ({
-        api_match_id: m.id,
-        matchday: m.matchday,
-        home_team: cleanTeamName(m.homeTeam.name),
-        away_team: cleanTeamName(m.awayTeam.name),
-        home_short: getShortCode(m.homeTeam.name),
-        away_short: getShortCode(m.awayTeam.name),
-        home_logo: m.homeTeam.crest || "",
-        away_logo: m.awayTeam.crest || "",
-        kickoff_time: m.utcDate,
-        status: mapStatus(m.status),
-        home_score: m.score.fullTime.home,
-        away_score: m.score.fullTime.away,
-    }));
+    return parseMatches(data.matches || []);
+}
+
+export async function fetchLiveAndRecentMatches(): Promise<ParsedFixture[]> {
+    return fetchRollingWindowMatches();
 }

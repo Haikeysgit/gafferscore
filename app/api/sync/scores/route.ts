@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { fetchAllMatches } from "@/lib/football-api";
+import { fetchRollingWindowMatches } from "@/lib/football-api";
 import { syncFixturesAbsoluteOverwrite } from "@/lib/fixture-sync";
 
 /**
  * GET /api/sync/scores?key=SYNC_SECRET
  *
- * High-frequency sync alias. This now performs the same authoritative
- * full-season overwrite as /api/sync so live VAR changes and postponed
- * reschedules cannot drift from the API.
+ * High-frequency sync with a rolling Yesterday/Today/Tomorrow lookback.
+ * This catches late score corrections and next-day postponement updates
+ * without pulling the full-season feed on every fast sync.
  */
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -25,8 +25,8 @@ export async function GET(request: Request) {
     }
 
     try {
-        const fixtures = await fetchAllMatches();
-        console.log(`[scores] Fetched ${fixtures.length} matches for authoritative overwrite`);
+        const fixtures = await fetchRollingWindowMatches();
+        console.log(`[scores] Fetched ${fixtures.length} matches in rolling lookback window`);
 
         const result = await syncFixturesAbsoluteOverwrite(fixtures);
 
