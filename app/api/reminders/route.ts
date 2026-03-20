@@ -87,39 +87,50 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "No gameweeks pending reminders." });
         }
 
-        // ── 2. For each candidate gameweek, check if today is the first match day ──
-        const today = new Date();
-        const todayUTC = today.toISOString().slice(0, 10); // YYYY-MM-DD
+     // ── 2. For each candidate gameweek, check if the NEXT match is today ──
+const today = new Date();
+const todayUTC = today.toISOString().slice(0, 10); // YYYY-MM-DD
+const nowISO = today.toISOString(); 
 
-        let targetGameweek = null;
+let targetGameweek = null;
 
-        for (const gw of gameweeks) {
-            // Get the earliest fixture in this gameweek
-            const { data: firstFixture } = await supabaseAdmin
-                .from("fixtures")
-                .select("kickoff_time")
-                .eq("gameweek_id", gw.id)
-                .order("kickoff_time", { ascending: true })
-                .limit(1)
-                .single();
+for (const gw of gameweeks) {
+    // Get the earliest UPCOMING fixture in this gameweek (ignores past matches)
+    const { data: firstFixture } = await supabaseAdmin
+        .from("fixtures")
+        .select("kickoff_time")
+        .eq("gameweek_id", gw.id)
+        .gt("kickoff_time", nowISO) // Must be in the future
+        .order("kickoff_time", { ascending: true })
+        .limit(1)
+        .single();
 
-            if (!firstFixture) continue;
+    if (!firstFixture) {
+        console.log(`[reminders] GW ${gw.name}: No upcoming fixtures found.`);
+        continue;
+    }
 
-            const firstMatchDate = firstFixture.kickoff_time.slice(0, 10);
+    // Convert the kickoff time safely
+    const firstMatchDate = new Date(firstFixture.kickoff_time).toISOString().slice(0, 10);
+    
+    console.log(`[reminders] GW ${gw.name} check: First upcoming match is ${firstMatchDate}. Today is ${todayUTC}.`);
 
-            if (firstMatchDate === todayUTC) {
-                targetGameweek = gw;
-                break;
-            }
-        }
+    if (firstMatchDate === todayUTC) {
+        targetGameweek = gw;
+        break;
+    }
+}
 
-        if (!targetGameweek) {
-            return NextResponse.json({
-                message: "Today is not the first match day of any pending gameweek. No emails sent.",
-            });
-        }
+if (!targetGameweek) {
+    console.log("[reminders] EXIT: Today is not the match day for any upcoming gameweek fixtures.");
+    return NextResponse.json({
+        message: "Today is not the first match day of any pending gameweek. No emails sent.",
+    });
+}
 
-        // ── 3. Fetch all user emails from auth.users ──
+console.log(`[reminders] MATCH FOUND! Preparing to send emails for GW: ${targetGameweek.name}`);
+
+// ── 3. Fetch all user emails from auth.users ──
         const allEmails: string[] = [];
         let page = 1;
         const perPage = 1000;
