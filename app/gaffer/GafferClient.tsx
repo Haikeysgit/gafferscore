@@ -874,7 +874,7 @@ export default function GafferClient({ user, upcomingPredictions, recentPredicti
     return (
         <div className="min-h-screen" style={{ background: "#0A192F" }}>
             <DashboardHeader nickname={user.nickname} />
-            <main className="mx-auto max-w-xl px-4 py-8">
+            <main className="mx-auto max-w-2xl px-4 py-8">
 
                 {/* Hero */}
                 <div className="mb-10 text-center">
