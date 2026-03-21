@@ -15,14 +15,18 @@ export default function DashboardHeader({ nickname }: DashboardHeaderProps) {
     const router = useRouter();
     const [, startTransition] = useTransition();
 
-    // Optimistic tab state — updates instantly on tap
-    const [activeTab, setActiveTab] = useState<"matches" | "leaderboard">(
-        pathname === "/leaderboard" ? "leaderboard" : "matches"
+    const getActiveTab = (path: string) => {
+        if (path === "/leaderboard") return "leaderboard";
+        if (path.startsWith("/gaffer")) return "gaffer";
+        return "matches";
+    };
+
+    const [activeTab, setActiveTab] = useState<"matches" | "leaderboard" | "gaffer">(
+        getActiveTab(pathname)
     );
 
-    // Sync with actual route when navigation completes
     useEffect(() => {
-        setActiveTab(pathname === "/leaderboard" ? "leaderboard" : "matches");
+        setActiveTab(getActiveTab(pathname));
     }, [pathname]);
 
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -44,15 +48,17 @@ export default function DashboardHeader({ nickname }: DashboardHeaderProps) {
         router.push("/");
     };
 
-    const handleTabSwitch = (tab: "matches" | "leaderboard") => {
+    const handleTabSwitch = (tab: "matches" | "leaderboard" | "gaffer") => {
         if (tab === activeTab) return;
-        // Instant optimistic highlight
         setActiveTab(tab);
-        // Navigate in transition so UI stays responsive
         startTransition(() => {
-            router.push(tab === "matches" ? "/dashboard" : "/leaderboard");
+            if (tab === "matches") router.push("/dashboard");
+            else if (tab === "leaderboard") router.push("/leaderboard");
+            else router.push("/gaffer");
         });
     };
+
+    const tabIndex = activeTab === "matches" ? 0 : activeTab === "gaffer" ? 1 : 2;
 
     return (
         <header className="glass-nav sticky top-0 z-50">
@@ -98,39 +104,43 @@ export default function DashboardHeader({ nickname }: DashboardHeaderProps) {
                 </div>
             </div>
 
-            {/* ── Row 2: Optimistic Navigation Tabs ── */}
-            <div className="flex justify-center border-t border-white/5 px-4 py-1.5">
-                <div className="relative flex items-center rounded-full border border-white/10 bg-white/5 p-1">
-                    {/* Animated green pill indicator */}
-                    <motion.div
-                        className="absolute inset-y-1 rounded-full bg-mint"
-                        layoutId="tab-pill"
-                        style={{
-                            width: "50%",
-                            left: activeTab === "matches" ? "4px" : "50%",
-                        }}
-                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-
-                    <motion.button
-                        onClick={() => handleTabSwitch("matches")}
-                        whileTap={{ scale: 0.96 }}
-                        className={`relative z-10 rounded-full px-6 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors duration-200 ${activeTab === "matches" ? "text-navy" : "text-white/50 hover:text-white"
-                            }`}
-                    >
-                        Matches
-                    </motion.button>
-                    <motion.button
-                        onClick={() => handleTabSwitch("leaderboard")}
-                        whileTap={{ scale: 0.96 }}
-                        className={`relative z-10 rounded-full px-6 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors duration-200 ${activeTab === "leaderboard" ? "text-navy" : "text-white/50 hover:text-white"
-                            }`}
-                    >
-                        Leaderboard
-                    </motion.button>
-                </div>
-            </div>
+            {/* ── Row 2: Navigation Tabs ── */}
+<div className="flex justify-center border-t border-white/5 px-4 py-1.5">
+    <div className="relative flex items-center rounded-full border border-white/10 bg-white/5 p-1" style={{ width: "320px" }}>
+        {/* Pill */}
+        <div
+            className="absolute inset-y-1 rounded-full bg-mint transition-all duration-300 ease-in-out"
+            style={{
+                width: "calc(33.333% - 2px)",
+                left: tabIndex === 0 ? "4px" : tabIndex === 1 ? "calc(33.333%)" : "calc(66.666%)",
+            }}
+        />
+        <motion.button
+            onClick={() => handleTabSwitch("matches")}
+            whileTap={{ scale: 0.96 }}
+            className={`relative z-10 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors duration-200 ${activeTab === "matches" ? "text-navy" : "text-white/50 hover:text-white"}`}
+            style={{ width: "33.333%", textAlign: "center" }}
+        >
+            Matches
+        </motion.button>
+        <motion.button
+            onClick={() => handleTabSwitch("gaffer")}
+            whileTap={{ scale: 0.96 }}
+            className={`relative z-10 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors duration-200 ${activeTab === "gaffer" ? "text-navy" : "text-white/50 hover:text-white"}`}
+            style={{ width: "33.333%", textAlign: "center" }}
+        >
+            The Gaffer
+        </motion.button>
+        <motion.button
+            onClick={() => handleTabSwitch("leaderboard")}
+            whileTap={{ scale: 0.96 }}
+            className={`relative z-10 rounded-full py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] transition-colors duration-200 ${activeTab === "leaderboard" ? "text-navy" : "text-white/50 hover:text-white"}`}
+            style={{ width: "33.333%", textAlign: "center" }}
+        >
+            Leaderboard
+        </motion.button>
+    </div>
+</div>
         </header>
     );
 }
-
