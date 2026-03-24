@@ -525,11 +525,10 @@ function PredictionCard({ prediction, isPast = false }: { prediction: Prediction
 }
 
 function PerformanceTracker({ performance }: { performance: Performance[] }) {
-    if (performance.length === 0) return null;
-
     const total = performance.length;
     const correct = performance.filter(p => p.outcome_correct).length;
     const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const hasPerformance = total > 0;
 
     const radius = 54;
     const circumference = 2 * Math.PI * radius;
@@ -579,7 +578,7 @@ function PerformanceTracker({ performance }: { performance: Performance[] }) {
                             The Gaffer&apos;s Record
                         </span>
                         <p className="text-[11px] font-mono mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
-                            Outcome prediction accuracy
+                            {hasPerformance ? "Outcome prediction accuracy" : "No completed predictions yet"}
                         </p>
 
                         <div className="grid grid-cols-2 gap-2">
