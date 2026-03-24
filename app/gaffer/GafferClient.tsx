@@ -891,6 +891,24 @@ export default function GafferClient({ user, upcomingPredictions, recentPredicti
                 {/* Performance tracker */}
                 <PerformanceTracker performance={performance} />
 
+                {/* Upcoming */}
+                {upcomingPredictions.length > 0 ? (
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>Upcoming</span>
+                            <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.15)" }}>{upcomingPredictions.length} matches</span>
+                        </div>
+                        {upcomingPredictions.map((pred) => (
+                            <PredictionCard key={pred.fixture_id} prediction={pred} isPast={false} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 mb-8">
+                        <p className="text-sm font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>No upcoming predictions.</p>
+                        <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.1)" }}>The Gaffer updates every Tuesday.</p>
+                    </div>
+                )}
+
                 {/* Recent matches */}
                 {recentPredictions.length > 0 && (
                     <div className="mb-8">
@@ -901,24 +919,6 @@ export default function GafferClient({ user, upcomingPredictions, recentPredicti
                         {recentPredictions.map((pred) => (
                             <PredictionCard key={pred.fixture_id} prediction={pred} isPast={true} />
                         ))}
-                    </div>
-                )}
-
-                {/* Upcoming */}
-                {upcomingPredictions.length > 0 ? (
-                    <div>
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>Upcoming</span>
-                            <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.15)" }}>{upcomingPredictions.length} matches</span>
-                        </div>
-                        {upcomingPredictions.map((pred) => (
-                            <PredictionCard key={pred.fixture_id} prediction={pred} isPast={false} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-16">
-                        <p className="text-sm font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>No upcoming predictions.</p>
-                        <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.1)" }}>The Gaffer updates every Tuesday.</p>
                     </div>
                 )}
             </main>
