@@ -1,14 +1,14 @@
 export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/actions";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import GafferClient from "./GafferClient";
 
 export default async function GafferPage() {
     const user = await getCurrentUser();
     if (!user || !user.nickname) redirect("/");
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: predictions } = await supabase
         .from("gaffer_predictions")
