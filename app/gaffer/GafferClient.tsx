@@ -1103,11 +1103,11 @@ function PerformanceTracker({
                         </p>
                     </div>
 
-                    <div className="grid gap-8 md:grid-cols-3">
+                    <div className="grid items-start gap-4 md:grid-cols-3 md:gap-8">
                         {metricCards.map((card) => (
                             <div
                                 key={card.label}
-                                className="flex min-h-[188px] flex-col rounded-[28px] p-8"
+                                className="flex h-fit flex-col rounded-[28px] px-6 py-6"
                                 style={{
                                     background: card.accent,
                                     border: `1px solid ${card.border}`,
@@ -1120,7 +1120,7 @@ function PerformanceTracker({
                                     </div>
                                     <InfoTooltip content={card.tooltip} align={card.tooltipAlign as "center" | "right"} />
                                 </div>
-                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                <div className="mt-4 flex flex-wrap items-center gap-3">
                                     <div className={`text-[2.2rem] font-bold font-mono leading-none ${card.tone}`}>
                                         {card.value}
                                     </div>
@@ -1138,11 +1138,11 @@ function PerformanceTracker({
                                         </div>
                                     )}
                                 </div>
-                                <div className="mt-5 text-[10px] font-mono uppercase tracking-[0.24em] leading-[1.7]" style={{ color: card.countTone }}>
+                                <div className="mt-3 text-[10px] font-mono uppercase tracking-[0.24em] leading-[1.7]" style={{ color: card.countTone }}>
                                     {hasFinishedMatches ? `${metrics.finishedCount} finished matches` : "Awaiting full-time data"}
                                 </div>
                                 {card.footer && (
-                                    <div className="mt-auto flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                                    <div className="mt-4 flex items-center justify-between gap-3 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
                                         <div className="min-w-0 text-[10px] font-mono uppercase tracking-[0.18em] leading-[1.5]" style={{ color: "rgba(255,255,255,0.26)" }}>
                                             {card.footer.homeTeam} vs {card.footer.awayTeam}
                                         </div>
@@ -1156,7 +1156,7 @@ function PerformanceTracker({
                                     </div>
                                 )}
                                 {!card.footer && card.footerText && (
-                                    <div className="mt-auto border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                                    <div className="mt-4 border-t pt-3" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
                                         <div className="text-[10px] font-mono uppercase tracking-[0.18em] leading-[1.5]" style={{ color: "rgba(255,255,255,0.26)" }}>
                                             {card.footerText}
                                         </div>
