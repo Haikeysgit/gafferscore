@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
 
@@ -8,6 +8,8 @@ interface Prediction {
     fixture_id: string;
     home_team: string;
     away_team: string;
+    home_logo?: string | null;
+    away_logo?: string | null;
     kickoff_time: string;
     gameweek: number;
     top_pick_home: number;
@@ -33,10 +35,44 @@ interface Performance {
     gameweek: number;
 }
 
+type CombinedFixture = Partial<Prediction> & {
+    fixture_id: string;
+    home_team: string;
+    away_team: string;
+    home_logo?: string | null;
+    away_logo?: string | null;
+    kickoff_time: string;
+    gameweek?: number | string | null;
+    gameweek_id?: number | string | null;
+    matchday?: number | string | null;
+    status?: string | null;
+    prediction?: Prediction | null;
+    performance?: Performance | null;
+};
+
+type PredictedFixture = CombinedFixture & Prediction;
+
+function isFixturePredicted(fixture: CombinedFixture): fixture is PredictedFixture {
+    return (
+        typeof fixture.top_pick_home === "number" &&
+        typeof fixture.top_pick_away === "number" &&
+        typeof fixture.top_pick_probability === "number" &&
+        typeof fixture.home_win_pct === "number" &&
+        typeof fixture.draw_pct === "number" &&
+        typeof fixture.away_win_pct === "number" &&
+        typeof fixture.xg_home === "number" &&
+        typeof fixture.xg_away === "number" &&
+        typeof fixture.scoreline_matrix === "string" &&
+        typeof fixture.second_pick === "string" &&
+        typeof fixture.third_pick === "string" &&
+        typeof fixture.lineup_adjusted === "boolean" &&
+        (fixture.analysis_text === null || typeof fixture.analysis_text === "string")
+    );
+}
+
 interface GafferClientProps {
     user: { nickname: string };
-    upcomingPredictions: Prediction[];
-    recentPredictions: Prediction[];
+    fixtures: CombinedFixture[];
     performance: Performance[];
 }
 
@@ -56,19 +92,28 @@ const TEAM_CRESTS: Record<string, string> = {
     "Leicester": "https://crests.football-data.org/338.png",
     "Liverpool": "https://crests.football-data.org/64.png",
     "Man City": "https://crests.football-data.org/65.png",
+    "Manchester City": "https://crests.football-data.org/65.png",
     "Man United": "https://crests.football-data.org/66.png",
+    "Manchester United": "https://crests.football-data.org/66.png",
     "Newcastle": "https://crests.football-data.org/67.png",
+    "Newcastle United": "https://crests.football-data.org/67.png",
     "Nott'm Forest": "https://crests.football-data.org/351.png",
+    "Nottingham Forest": "https://crests.football-data.org/351.png",
     "Southampton": "https://crests.football-data.org/340.png",
     "Sunderland": "https://crests.football-data.org/71.png",
+    "Sunderland AFC": "https://crests.football-data.org/71.png",
     "Tottenham": "https://crests.football-data.org/73.png",
+    "Tottenham Hotspur": "https://crests.football-data.org/73.png",
     "West Ham": "https://crests.football-data.org/563.png",
+    "West Ham United": "https://crests.football-data.org/563.png",
     "Wolves": "https://crests.football-data.org/76.png",
+    "Wolverhampton Wanderers": "https://crests.football-data.org/76.png",
+    "Leeds United": "https://crests.football-data.org/341.png",
 };
 
-function TeamCrest({ team, size = 44 }: { team: string; size?: number }) {
+function TeamCrest({ team, logoUrl, size = 44 }: { team: string; logoUrl?: string | null; size?: number }) {
     const [error, setError] = useState(false);
-    const src = TEAM_CRESTS[team];
+    const src = logoUrl || TEAM_CRESTS[team];
     if (!src || error) {
         return (
             <div className="rounded-full bg-white/10 flex items-center justify-center font-mono font-bold text-white/50 text-[10px]"
@@ -330,11 +375,114 @@ function GafferChat({ fixtureId }: { fixtureId: string }) {
     );
 }
 
-function PredictionCard({ prediction, isPast = false }: { prediction: Prediction; isPast?: boolean }) {
+function CountdownTimer({ targetDate }: { targetDate: Date | number | string }) {
+    const getTimeRemaining = () => {
+        const targetTime = new Date(targetDate).getTime();
+        const diff = targetTime - Date.now();
+
+        if (!Number.isFinite(targetTime) || diff <= 0) {
+            return null;
+        }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const days = Math.floor(totalSeconds / (24 * 60 * 60));
+        const hours = Math.floor((totalSeconds % (24 * 60 * 60)) / (60 * 60));
+        const minutes = Math.floor((totalSeconds % (60 * 60)) / 60);
+        const seconds = totalSeconds % 60;
+
+        return `${days} days, ${hours} hrs, ${minutes} mins, ${seconds} secs`;
+    };
+
+    const [timeRemaining, setTimeRemaining] = useState<string | null>(null);
+
+    useEffect(() => {
+        const updateTimeRemaining = () => {
+            setTimeRemaining(getTimeRemaining());
+        };
+
+        updateTimeRemaining();
+
+        const intervalId = window.setInterval(() => {
+            updateTimeRemaining();
+        }, 1000);
+
+        return () => window.clearInterval(intervalId);
+    }, [targetDate]);
+
+    return <>{timeRemaining ?? "Predicting..."}</>;
+}
+
+function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture; isPast?: boolean }) {
     const [expanded, setExpanded] = useState(false);
     const [hovered, setHovered] = useState(false);
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
-    const [analysis, setAnalysis] = useState<string | null>(prediction.analysis_text);
+    const [analysis, setAnalysis] = useState<string | null>(fixture.analysis_text ?? null);
+    const isLocked = !isFixturePredicted(fixture);
+    const cardGameweek = Number(fixture.gameweek ?? fixture.gameweek_id ?? 0);
+    const unlockTime = new Date(new Date(fixture.kickoff_time).getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    if (isLocked) {
+        return (
+            <div
+                className="rounded-2xl overflow-hidden"
+                style={{
+                    background: "#0f2038",
+                    border: "1px solid rgba(255,255,255,0.07)",
+                    marginBottom: "16px",
+                }}
+            >
+                <div className="flex items-center justify-between px-5 pt-4 pb-0">
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold text-white/20 uppercase tracking-widest">GW{cardGameweek}</span>
+                        <span
+                            className="text-[9px] font-mono text-white/20 uppercase tracking-widest px-1.5 py-0.5 rounded"
+                            style={{ background: "rgba(255,255,255,0.06)" }}
+                        >
+                            Locked
+                        </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-white/20">{formatKickoff(fixture.kickoff_time)}</span>
+                </div>
+
+                <div className="px-5 pt-4 pb-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex flex-col items-center gap-2 flex-1">
+                            <TeamCrest team={fixture.home_team} logoUrl={fixture.home_logo} size={46} />
+                                <span className="text-[11px] font-bold text-white text-center leading-tight tracking-wide w-full px-1 truncate">{fixture.home_team}</span>
+                            </div>
+                            <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.15)" }}>vs</span>
+                            <div className="flex flex-col items-center gap-2 flex-1">
+                            <TeamCrest team={fixture.away_team} logoUrl={fixture.away_logo} size={46} />
+                                <span className="text-[11px] font-bold text-white text-center leading-tight tracking-wide w-full px-1 truncate">{fixture.away_team}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                <div className="mx-4 mt-2 mb-4">
+                    <div
+                        className="relative min-h-[180px] rounded-[26px] border border-slate-700/50 shadow-inner px-8 py-8 text-center"
+                        style={{
+                            background: "#1f3657",
+                        }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 mb-4 opacity-100 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ color: "rgba(255,255,255,0.85)" }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+
+                        <span className="block text-sm font-semibold tracking-[0.15em] uppercase mb-4" style={{ color: "rgba(255,255,255,0.92)" }}>
+                            Prediction Unlocks In
+                        </span>
+
+                        <div className="text-lg md:text-xl font-mono font-bold tracking-wide leading-tight" style={{ color: "#ffffff" }}>
+                            <CountdownTimer targetDate={unlockTime} />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const prediction = fixture;
 
     let matrix: number[][] = [];
     try { matrix = JSON.parse(prediction.scoreline_matrix ?? "[]"); } catch { matrix = []; }
@@ -383,12 +531,12 @@ function PredictionCard({ prediction, isPast = false }: { prediction: Prediction
 <div className="px-5 pt-4 pb-4">
     <div className="flex items-center justify-between">
         <div className="flex flex-col items-center gap-2 flex-1">
-            <TeamCrest team={prediction.home_team} size={46} />
+            <TeamCrest team={prediction.home_team} logoUrl={prediction.home_logo} size={46} />
             <span className="text-[11px] font-bold text-white text-center leading-tight tracking-wide w-full px-1 truncate">{prediction.home_team}</span>
         </div>
         <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.15)" }}>vs</span>
         <div className="flex flex-col items-center gap-2 flex-1">
-            <TeamCrest team={prediction.away_team} size={46} />
+            <TeamCrest team={prediction.away_team} logoUrl={prediction.away_logo} size={46} />
             <span className="text-[11px] font-bold text-white text-center leading-tight tracking-wide w-full px-1 truncate">{prediction.away_team}</span>
         </div>
     </div>
@@ -869,7 +1017,97 @@ function FloatingGafferChat({ predictions }: { predictions: Prediction[] }) {
     );
 }
 
-export default function GafferClient({ user, upcomingPredictions, recentPredictions, performance }: GafferClientProps) {
+export default function GafferClient({ user, fixtures, performance }: GafferClientProps) {
+    const getFixtureGameweek = (fixture: CombinedFixture) => {
+        const candidates = [
+            fixture.gameweek_id,
+            fixture.gameweek,
+            fixture.matchday,
+            fixture.prediction?.gameweek,
+            fixture.performance?.gameweek,
+        ];
+
+        for (const candidate of candidates) {
+            const parsed = Number(candidate);
+            if (Number.isInteger(parsed) && parsed > 0) {
+                return parsed;
+            }
+        }
+
+        return null;
+    };
+
+    const getCurrentRealGameweek = () => {
+        if (fixtures.length === 0) return 31;
+
+        const now = new Date();
+        const fixturesByKickoff = [...fixtures]
+            .map((fixture) => ({
+                fixture,
+                kickoffTime: new Date(fixture.kickoff_time),
+                gameweek: getFixtureGameweek(fixture),
+            }))
+            .filter(
+                (entry) => !Number.isNaN(entry.kickoffTime.getTime()) && entry.gameweek !== null,
+            )
+            .sort((a, b) => a.kickoffTime.getTime() - b.kickoffTime.getTime());
+
+        if (fixturesByKickoff.length === 0) {
+            return 31;
+        }
+
+        const upcomingFixture = fixturesByKickoff.find(
+            (fixture) => fixture.kickoffTime > now,
+        );
+
+        if (upcomingFixture) {
+            return upcomingFixture.gameweek ?? 31;
+        }
+
+        const mostRecentCompletedFixture = [...fixturesByKickoff]
+            .reverse()
+            .find((fixture) => fixture.kickoffTime <= now);
+
+        return mostRecentCompletedFixture?.gameweek ?? fixturesByKickoff[0]?.gameweek ?? 31;
+    };
+
+    const getGameweekStatusLabel = (currentRealGameweek: number) => {
+        if (selectedGameweek < currentRealGameweek) {
+            return "Historical Results";
+        }
+
+        if (selectedGameweek === currentRealGameweek) {
+            return "Active Predictions";
+        }
+
+        return "Locked";
+    };
+
+    const [selectedGameweek, setSelectedGameweek] = useState<number>(() => getCurrentRealGameweek());
+
+    useEffect(() => {
+        setSelectedGameweek(getCurrentRealGameweek());
+    }, [fixtures]);
+
+    const currentRealGameweek = getCurrentRealGameweek();
+    const gameweekStatusLabel = getGameweekStatusLabel(currentRealGameweek);
+    const predictions = fixtures.filter(isFixturePredicted);
+    const filteredFixtures = fixtures.filter(
+        (fixture) => {
+            const gw =
+                fixture.gameweek_id ||
+                fixture.gameweek ||
+                fixture.matchday ||
+                fixture.prediction?.gameweek ||
+                fixture.performance?.gameweek;
+            return Number(gw) === Number(selectedGameweek);
+        },
+    );
+    const selectedFixtures = filteredFixtures
+        .filter((fixture) => isFixturePredicted(fixture) || new Date(fixture.kickoff_time) > new Date())
+        .sort((a, b) => new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime());
+    const now = Date.now();
+
     return (
         <div className="min-h-screen" style={{ background: "#0A192F" }}>
             <DashboardHeader nickname={user.nickname} />
@@ -890,39 +1128,87 @@ export default function GafferClient({ user, upcomingPredictions, recentPredicti
                 {/* Performance tracker */}
                 <PerformanceTracker performance={performance} />
 
-                {/* Upcoming */}
-                {upcomingPredictions.length > 0 ? (
-                    <div className="mb-8">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>Upcoming</span>
-                            <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.15)" }}>{upcomingPredictions.length} matches</span>
+                <div className="mb-8 flex items-center justify-center gap-4">
+                    <button
+                        type="button"
+                        onClick={() => setSelectedGameweek((prev) => Math.max(1, prev - 1))}
+                        disabled={selectedGameweek === 1}
+                        className="flex h-11 w-11 items-center justify-center rounded-full transition-all"
+                        style={{
+                            background: selectedGameweek === 1 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                            border: selectedGameweek === 1 ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(255,255,255,0.1)",
+                            color: selectedGameweek === 1 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.72)",
+                            cursor: selectedGameweek === 1 ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 18l-6-6 6-6" />
+                        </svg>
+                    </button>
+
+                    <div className="text-center">
+                        <div className="text-lg font-bold text-white font-mono tracking-[0.14em]">
+                            THE GAFFER: GW {selectedGameweek}
                         </div>
-                        {upcomingPredictions.map((pred) => (
-                            <PredictionCard key={pred.fixture_id} prediction={pred} isPast={false} />
-                        ))}
+                        <div
+                            className="mt-1 text-[10px] font-mono uppercase tracking-[0.22em]"
+                            style={{ color: "rgba(255,255,255,0.32)" }}
+                        >
+                            {gameweekStatusLabel}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setSelectedGameweek((prev) => Math.min(38, prev + 1))}
+                        disabled={selectedGameweek === 38}
+                        className="flex h-11 w-11 items-center justify-center rounded-full transition-all"
+                        style={{
+                            background: selectedGameweek === 38 ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.06)",
+                            border: selectedGameweek === 38 ? "1px solid rgba(255,255,255,0.05)" : "1px solid rgba(255,255,255,0.1)",
+                            color: selectedGameweek === 38 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.72)",
+                            cursor: selectedGameweek === 38 ? "not-allowed" : "pointer",
+                        }}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M9 18l6-6-6-6" />
+                        </svg>
+                    </button>
+                </div>
+
+                {selectedFixtures.length > 0 ? (
+                    <div className="mb-8">
+                        {selectedFixtures.map((fixture) => {
+                            const fixtureGameweek = getFixtureGameweek(fixture) ?? selectedGameweek;
+                            const fixtureStatus = fixture.status?.toUpperCase();
+                            const isPast =
+                                selectedGameweek < currentRealGameweek ||
+                                fixtureStatus === "FINISHED" ||
+                                fixtureStatus === "FT" ||
+                                new Date(fixture.kickoff_time).getTime() < now;
+
+                            return (
+                                <PredictionCard
+                                    key={fixture.fixture_id}
+                                    fixture={{
+                                        ...fixture,
+                                        gameweek: fixtureGameweek,
+                                        analysis_text: fixture.analysis_text ?? null,
+                                    }}
+                                    isPast={isPast}
+                                />
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="text-center py-16 mb-8">
-                        <p className="text-sm font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>No upcoming predictions.</p>
-                        <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.1)" }}>The Gaffer updates every Tuesday.</p>
-                    </div>
-                )}
-
-                {/* Recent matches */}
-                {recentPredictions.length > 0 && (
-                    <div className="mb-8">
-                        <div className="flex items-center justify-between mb-4">
-                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>Recent</span>
-                            <span className="text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.15)" }}>{recentPredictions.length} matches</span>
-                        </div>
-                        {recentPredictions.map((pred) => (
-                            <PredictionCard key={pred.fixture_id} prediction={pred} isPast={true} />
-                        ))}
+                        <p className="text-sm font-mono" style={{ color: "rgba(255,255,255,0.2)" }}>No matches available for this gameweek.</p>
+                        <p className="text-xs mt-1 font-mono" style={{ color: "rgba(255,255,255,0.1)" }}>Try another gameweek.</p>
                     </div>
                 )}
             </main>
 
-            <FloatingGafferChat predictions={[...upcomingPredictions, ...recentPredictions]} />
+            <FloatingGafferChat predictions={predictions} />
         </div>
     );
 }

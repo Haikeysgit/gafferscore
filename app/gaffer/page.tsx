@@ -10,27 +10,69 @@ export default async function GafferPage() {
 
     const supabase = createAdminClient();
 
-    const { data: predictions } = await supabase
-        .from("gaffer_predictions")
-        .select("*")
-        .order("kickoff_time", { ascending: true });
+    const [
+        { data: fixtures },
+        { data: predictions },
+        { data: performance },
+    ] = await Promise.all([
+        supabase
+            .from("fixtures")
+            .select("*")
+            .order("kickoff_time", { ascending: true }),
+        supabase
+            .from("gaffer_predictions")
+            .select("*")
+            .order("kickoff_time", { ascending: true }),
+        supabase
+            .from("gaffer_performance")
+            .select("*")
+            .order("created_at", { ascending: false }),
+    ]);
 
-    const { data: performance } = await supabase
-        .from("gaffer_performance")
-        .select("*")
-        .order("created_at", { ascending: false });
+    const normalizeKey = (value: unknown) => {
+        if (value === null || value === undefined) return null;
+        return String(value);
+    };
+    const predictionMap = new Map(
+        (predictions ?? []).map((prediction) => [normalizeKey(prediction.fixture_id), prediction]),
+    );
+    const performanceMap = new Map(
+        (performance ?? []).map((entry) => [normalizeKey(entry.fixture_id), entry]),
+    );
+    const parseGameweek = (value: unknown) => {
+        const parsed = Number(value);
+        return Number.isInteger(parsed) ? parsed : null;
+    };
 
-    const now = new Date();
-    const upcoming = (predictions ?? []).filter(p => new Date(p.kickoff_time) > now);
-    const recent = (predictions ?? []).filter(p => new Date(p.kickoff_time) <= now).slice(-5).reverse();
+    const combinedFixtures = (fixtures ?? []).map((fixture) => {
+        const fixtureLookupKey = normalizeKey(
+            fixture.api_match_id ?? fixture.fixture_id ?? fixture.id,
+        );
+        const prediction = fixtureLookupKey ? predictionMap.get(fixtureLookupKey) : undefined;
+        const performanceEntry = fixtureLookupKey ? performanceMap.get(fixtureLookupKey) : undefined;
+        const gameweek =
+            parseGameweek(fixture.gameweek_id) ??
+            parseGameweek(fixture.gameweek) ??
+            parseGameweek(fixture.matchday) ??
+            parseGameweek(prediction?.gameweek) ??
+            parseGameweek(performanceEntry?.gameweek) ??
+            null;
 
+        return {
+            ...fixture,
+            prediction: prediction ?? null,
+            ...(prediction ?? {}),
+            fixture_id: fixtureLookupKey ?? "",
+            performance: performanceEntry ?? null,
+            gameweek,
+            gameweek_id: parseGameweek(fixture.gameweek_id) ?? gameweek,
+        };
+    });
 
-return (
-    <GafferClient
-
+    return (
+        <GafferClient
             user={user}
-            upcomingPredictions={upcoming}
-            recentPredictions={recent}
+            fixtures={combinedFixtures}
             performance={performance ?? []}
         />
     );
