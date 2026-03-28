@@ -46,11 +46,27 @@ type CombinedFixture = Partial<Prediction> & {
     gameweek_id?: number | string | null;
     matchday?: number | string | null;
     status?: string | null;
+    home_score?: number | null;
+    away_score?: number | null;
     prediction?: Prediction | null;
     performance?: Performance | null;
 };
 
 type PredictedFixture = CombinedFixture & Prediction;
+
+interface GameweekMatrixMetrics {
+    averageMatrixHit: number;
+    finishedCount: number;
+    highestHitFixtureIds: string[];
+    highestHitMatch: {
+        awayLogo?: string | null;
+        awayTeam: string;
+        homeLogo?: string | null;
+        homeTeam: string;
+    } | null;
+    highestMatrixHit: number;
+    topThreeHitRate: number;
+}
 
 function isFixturePredicted(fixture: CombinedFixture): fixture is PredictedFixture {
     return (
@@ -68,6 +84,129 @@ function isFixturePredicted(fixture: CombinedFixture): fixture is PredictedFixtu
         typeof fixture.lineup_adjusted === "boolean" &&
         (fixture.analysis_text === null || typeof fixture.analysis_text === "string")
     );
+}
+
+function parseScorelineMatrix(scorelineMatrix: string): number[][] {
+    try {
+        const parsed = JSON.parse(scorelineMatrix) as unknown;
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed.map((row) => {
+            if (!Array.isArray(row)) {
+                return [];
+            }
+
+            return row.map((value) => {
+                const parsedValue = Number(value);
+                return Number.isFinite(parsedValue) ? parsedValue : 0;
+            });
+        });
+    } catch {
+        return [];
+    }
+}
+
+function getActualMatrixHit(fixture: Pick<CombinedFixture, "home_score" | "away_score" | "scoreline_matrix">): number | null {
+    if (
+        typeof fixture.home_score !== "number" ||
+        typeof fixture.away_score !== "number" ||
+        typeof fixture.scoreline_matrix !== "string"
+    ) {
+        return null;
+    }
+
+    const matrix = parseScorelineMatrix(fixture.scoreline_matrix);
+    const probability = (matrix[fixture.home_score] ?? [])[fixture.away_score];
+
+    if (typeof probability !== "number" || !Number.isFinite(probability)) {
+        return null;
+    }
+
+    return probability * 100;
+}
+
+function isTopThreeMatrixHit(fixture: Pick<CombinedFixture, "home_score" | "away_score" | "scoreline_matrix">): boolean {
+    if (
+        typeof fixture.home_score !== "number" ||
+        typeof fixture.away_score !== "number" ||
+        typeof fixture.scoreline_matrix !== "string"
+    ) {
+        return false;
+    }
+
+    const matrix = parseScorelineMatrix(fixture.scoreline_matrix);
+    const actualScoreKey = `${fixture.home_score}-${fixture.away_score}`;
+
+    return matrix
+        .flatMap((row, homeGoals) =>
+            row.map((probability, awayGoals) => ({
+                probability,
+                scoreKey: `${homeGoals}-${awayGoals}`,
+            })),
+        )
+        .sort((a, b) => b.probability - a.probability)
+        .slice(0, 3)
+        .some((entry) => entry.scoreKey === actualScoreKey);
+}
+
+function calculateGameweekMatrixMetrics(fixtures: CombinedFixture[]): GameweekMatrixMetrics {
+    const finishedFixtures = fixtures.filter(
+        (fixture): fixture is PredictedFixture & { home_score: number; away_score: number } =>
+            isFixturePredicted(fixture) &&
+            fixture.status?.toUpperCase() === "FINISHED" &&
+            typeof fixture.home_score === "number" &&
+            typeof fixture.away_score === "number",
+    );
+
+    if (finishedFixtures.length === 0) {
+        return {
+            averageMatrixHit: 0,
+            finishedCount: 0,
+            highestHitFixtureIds: [],
+            highestHitMatch: null,
+            highestMatrixHit: 0,
+            topThreeHitRate: 0,
+        };
+    }
+
+    let highestMatrixHit = 0;
+    let highestHitFixtureIds: string[] = [];
+    let highestHitMatch: GameweekMatrixMetrics["highestHitMatch"] = null;
+    let totalMatrixHit = 0;
+    let topThreeHits = 0;
+
+    for (const fixture of finishedFixtures) {
+        const actualMatrixHit = getActualMatrixHit(fixture) ?? 0;
+
+        if (actualMatrixHit > highestMatrixHit) {
+            highestMatrixHit = actualMatrixHit;
+            highestHitFixtureIds = [fixture.fixture_id];
+            highestHitMatch = {
+                awayLogo: fixture.away_logo,
+                awayTeam: fixture.away_team,
+                homeLogo: fixture.home_logo,
+                homeTeam: fixture.home_team,
+            };
+        } else if (actualMatrixHit === highestMatrixHit) {
+            highestHitFixtureIds.push(fixture.fixture_id);
+        }
+        totalMatrixHit += actualMatrixHit;
+
+        if (isTopThreeMatrixHit(fixture)) {
+            topThreeHits += 1;
+        }
+    }
+
+    return {
+        averageMatrixHit: totalMatrixHit / finishedFixtures.length,
+        finishedCount: finishedFixtures.length,
+        highestHitFixtureIds,
+        highestHitMatch,
+        highestMatrixHit,
+        topThreeHitRate: (topThreeHits / finishedFixtures.length) * 100,
+    };
 }
 
 interface GafferClientProps {
@@ -141,6 +280,117 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
         <div className="flex items-center gap-3 mb-4">
             <span className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] font-mono whitespace-nowrap">{children}</span>
             <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.06)" }} />
+        </div>
+    );
+}
+
+function InfoTooltip({
+    content,
+    align = "center",
+}: {
+    content: string;
+    align?: "center" | "right";
+}) {
+    const [open, setOpen] = useState(false);
+    const [isMobileViewport, setIsMobileViewport] = useState(false);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const updateViewportMode = () => {
+            setIsMobileViewport(window.innerWidth < 640);
+        };
+
+        updateViewportMode();
+        window.addEventListener("resize", updateViewportMode);
+
+        return () => window.removeEventListener("resize", updateViewportMode);
+    }, []);
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        const handlePointerDown = (event: PointerEvent) => {
+            if (!tooltipRef.current?.contains(event.target as Node)) {
+                setOpen(false);
+            }
+        };
+
+        window.addEventListener("pointerdown", handlePointerDown);
+        return () => window.removeEventListener("pointerdown", handlePointerDown);
+    }, [open]);
+
+    const tooltipWidth = isMobileViewport ? "190px" : "280px";
+
+    return (
+        <div
+            ref={tooltipRef}
+            className="relative flex items-center"
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+        >
+            <button
+                type="button"
+                aria-label="Explain metric"
+                aria-expanded={open}
+                onClick={() => setOpen((prev) => !prev)}
+                className="flex shrink-0 items-center justify-center transition-colors"
+                style={{
+                    width: "15px",
+                    height: "15px",
+                    minWidth: "15px",
+                    minHeight: "15px",
+                    padding: 0,
+                    borderRadius: "50%",
+                    background: open ? "rgba(30,41,59,0.98)" : "rgba(30,41,59,0.92)",
+                    border: "1px solid rgba(148,163,184,0.3)",
+                    boxShadow: open ? "0 8px 18px rgba(0,0,0,0.28)" : "none",
+                    color: open ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.82)",
+                    outline: "none",
+                }}
+            >
+                <span
+                    className="font-mono italic leading-none"
+                    style={{ fontSize: "7px", transform: "translateY(-0.25px)" }}
+                >
+                    i
+                </span>
+            </button>
+
+            {open && (
+                <div
+                    className={`absolute bottom-full z-[80] mb-3 rounded-2xl text-white shadow-2xl ${
+                        align === "right" ? "right-0" : "left-1/2 -translate-x-1/2"
+                    }`}
+                    style={{
+                        background: "rgba(8,15,29,0.96)",
+                        border: "1px solid rgba(255,255,255,0.08)",
+                        boxShadow: "0 18px 36px rgba(0,0,0,0.4)",
+                        width: tooltipWidth,
+                        maxWidth: isMobileViewport ? tooltipWidth : "90vw",
+                        padding: "8px 12px",
+                        textAlign: "left",
+                        fontSize: "10px",
+                        lineHeight: "1.55",
+                        whiteSpace: "normal",
+                        wordBreak: "normal",
+                        overflowWrap: "break-word",
+                    }}
+                >
+                    <div>{content}</div>
+                    <div
+                        className={`absolute top-full h-3 w-3 -translate-y-1/2 rotate-45 ${
+                            align === "right" ? "right-[3px]" : "left-1/2 -translate-x-1/2"
+                        }`}
+                        style={{
+                            background: "rgba(8,15,29,0.96)",
+                            borderRight: "1px solid rgba(255,255,255,0.08)",
+                            borderBottom: "1px solid rgba(255,255,255,0.08)",
+                        }}
+                    />
+                </div>
+            )}
         </div>
     );
 }
@@ -412,7 +662,15 @@ function CountdownTimer({ targetDate }: { targetDate: Date | number | string }) 
     return <>{timeRemaining ?? "Predicting..."}</>;
 }
 
-function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture; isPast?: boolean }) {
+function PredictionCard({
+    fixture,
+    isPast = false,
+    isMatchOfTheWeek = false,
+}: {
+    fixture: CombinedFixture;
+    isPast?: boolean;
+    isMatchOfTheWeek?: boolean;
+}) {
     const [expanded, setExpanded] = useState(false);
     const [hovered, setHovered] = useState(false);
     const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -483,6 +741,12 @@ function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture;
     }
 
     const prediction = fixture;
+    const actualMatrixHit = getActualMatrixHit(prediction);
+    const hasActualResult =
+        typeof prediction.home_score === "number" &&
+        typeof prediction.away_score === "number" &&
+        prediction.status?.toUpperCase() === "FINISHED";
+    const isTopThreeHit = hasActualResult ? isTopThreeMatrixHit(prediction) : false;
 
     let matrix: number[][] = [];
     try { matrix = JSON.parse(prediction.scoreline_matrix ?? "[]"); } catch { matrix = []; }
@@ -523,6 +787,18 @@ function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture;
                 <div className="flex items-center gap-2">
                     <span className="text-[10px] font-mono font-bold text-white/20 uppercase tracking-widest">GW{prediction.gameweek}</span>
                     {isPast && <span className="text-[9px] font-mono text-white/20 uppercase tracking-widest px-1.5 py-0.5 rounded" style={{ background: "rgba(255,255,255,0.06)" }}>Finished</span>}
+                    {isMatchOfTheWeek && (
+                        <span
+                            className="text-[9px] font-mono font-bold uppercase tracking-[0.16em] px-2 py-0.5 rounded-full"
+                            style={{
+                                background: "rgba(57,255,20,0.11)",
+                                border: "1px solid rgba(57,255,20,0.22)",
+                                color: "#39FF14",
+                            }}
+                        >
+                            Match of the Week
+                        </span>
+                    )}
                 </div>
                 <span className="text-[10px] font-mono text-white/20">{formatKickoff(prediction.kickoff_time)}</span>
             </div>
@@ -564,23 +840,87 @@ function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture;
 
 {/* Predicted Score ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â secondary */}
 <div className="px-5 pb-5 pt-6">
-    <div className="rounded-xl px-4 py-3"
-        style={{ background: "rgba(57,255,20,0.05)", border: "1px solid rgba(57,255,20,0.08)" }}>
-        <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[9px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(57,255,20,0.45)" }}>
-                Predicted score
-            </span>
-            <span className="text-[9px] font-mono" style={{ color: "rgba(57,255,20,0.35)" }}>
-                {prediction.top_pick_probability}% probability
-            </span>
+    {hasActualResult ? (
+        <div
+            className="rounded-2xl px-4 py-4"
+            style={{
+                background: "linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.025) 100%)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+            }}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <div className="text-[9px] font-bold uppercase tracking-[0.22em] font-mono" style={{ color: "rgba(255,255,255,0.28)" }}>
+                        Actual Result
+                    </div>
+                    <div className="mt-2 text-2xl font-bold font-mono text-white">
+                        {prediction.home_score} - {prediction.away_score}
+                    </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                    {isTopThreeHit && (
+                        <div
+                            className="rounded-full px-2.5 py-1 text-[8px] font-bold font-mono uppercase tracking-[0.18em]"
+                            style={{
+                                background: "rgba(8,45,24,0.92)",
+                                border: "1px solid rgba(57,255,20,0.2)",
+                                color: "#39FF14",
+                            }}
+                        >
+                            Top 3 Hit
+                        </div>
+                    )}
+                    {isMatchOfTheWeek && (
+                        <div
+                            className="rounded-full px-2.5 py-1 text-[8px] font-bold font-mono uppercase tracking-[0.18em]"
+                            style={{
+                                background: "rgba(57,255,20,0.11)",
+                                border: "1px solid rgba(57,255,20,0.22)",
+                                color: "#39FF14",
+                            }}
+                        >
+                            Match of the Week
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="mt-4 h-px" style={{ background: "rgba(255,255,255,0.07)" }} />
+
+            <div className="mt-4">
+                <div className="text-[9px] font-bold uppercase tracking-[0.22em] font-mono" style={{ color: "rgba(255,255,255,0.28)" }}>
+                    Model Probability
+                </div>
+                <div className="mt-2 text-lg font-bold font-mono text-mint">
+                    {actualMatrixHit && actualMatrixHit >= 1
+                        ? formatDashboardPercentage(actualMatrixHit)
+                        : "Less than 1 percent"}
+                </div>
+                <div className="mt-1.5 text-[10px] font-mono uppercase tracking-[0.16em]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                    Probability assigned to the exact final score
+                </div>
+            </div>
         </div>
-        <div className="text-[13px] font-bold font-mono text-mint text-center">
-            {prediction.home_team} {prediction.top_pick_home} - {prediction.top_pick_away} {prediction.away_team}
+    ) : (
+        <div className="rounded-xl px-4 py-3"
+            style={{ background: "rgba(57,255,20,0.05)", border: "1px solid rgba(57,255,20,0.08)" }}>
+            <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[9px] font-bold uppercase tracking-[0.2em] font-mono" style={{ color: "rgba(57,255,20,0.45)" }}>
+                    Predicted score
+                </span>
+                <span className="text-[9px] font-mono" style={{ color: "rgba(57,255,20,0.35)" }}>
+                    {prediction.top_pick_probability}% probability
+                </span>
+            </div>
+            <div className="text-[13px] font-bold font-mono text-mint text-center">
+                {prediction.home_team} {prediction.top_pick_home} - {prediction.top_pick_away} {prediction.away_team}
+            </div>
+            <div className="text-[9px] font-mono text-center mt-1.5 uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.2)" }}>
+                Top pick - open full analysis for all scorelines
+            </div>
         </div>
-        <div className="text-[9px] font-mono text-center mt-1.5 uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.2)" }}>
-            Top pick - open full analysis for all scorelines
-        </div>
-    </div>
+    )}
 </div>
 
             {/* Expand button */}
@@ -672,78 +1012,158 @@ function PredictionCard({ fixture, isPast = false }: { fixture: CombinedFixture;
     );
 }
 
-function PerformanceTracker({ performance }: { performance: Performance[] }) {
-    const total = performance.length;
-    const correct = performance.filter(p => p.outcome_correct).length;
-    const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const hasPerformance = total > 0;
+function formatDashboardPercentage(value: number) {
+    const rounded = Math.round(value * 10) / 10;
+    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}%`;
+}
 
-    const radius = 54;
-    const circumference = 2 * Math.PI * radius;
-    const strokeDash = (pct / 100) * circumference;
+function formatTrendDelta(value: number) {
+    const rounded = Math.round(Math.abs(value) * 10) / 10;
+    return `${Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)}%`;
+}
+
+function PerformanceTracker({
+    metrics,
+    gameweek,
+    averageMatrixHitTrend,
+}: {
+    metrics: GameweekMatrixMetrics;
+    gameweek: number;
+    averageMatrixHitTrend: number | null;
+}) {
+    const hasFinishedMatches = metrics.finishedCount > 0;
+    const metricCards = [
+        {
+            accent: "linear-gradient(180deg, rgba(57,255,20,0.16) 0%, rgba(57,255,20,0.1) 100%)",
+            border: "rgba(57,255,20,0.18)",
+            countTone: "rgba(57,255,20,0.32)",
+            footer: null,
+            footerText: null,
+            label: "Top 3 Hit Rate",
+            tone: "text-mint",
+            trendText: null,
+            tooltipAlign: "center",
+            tooltip: "This shows the percentage of matches where the real final score was one of the AI engine's three most likely predictions.",
+            value: formatDashboardPercentage(metrics.topThreeHitRate),
+        },
+        {
+            accent: "linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.035) 100%)",
+            border: "rgba(255,255,255,0.08)",
+            countTone: "rgba(255,255,255,0.24)",
+            footer: metrics.highestHitMatch,
+            footerText: null,
+            label: "Highest Matrix Hit",
+            tone: "text-white",
+            trendText: null,
+            tooltipAlign: "center",
+            tooltip: "This is the single highest probability percentage the AI gave to a scoreline that actually happened this week.",
+            value: formatDashboardPercentage(metrics.highestMatrixHit),
+        },
+        {
+            accent: "linear-gradient(180deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.035) 100%)",
+            border: "rgba(255,255,255,0.08)",
+            countTone: "rgba(255,255,255,0.24)",
+            footer: null,
+            footerText: "League Consistency Score",
+            label: "Average Matrix Hit",
+            tone: "text-white",
+            trendText:
+                averageMatrixHitTrend === null
+                    ? null
+                    : `${averageMatrixHitTrend >= 0 ? "up" : "down"} ${formatTrendDelta(averageMatrixHitTrend)} from last week`,
+            trendTone: averageMatrixHitTrend === null || averageMatrixHitTrend >= 0 ? "#39FF14" : "#f87171",
+            trendSurface:
+                averageMatrixHitTrend === null || averageMatrixHitTrend >= 0
+                    ? "rgba(57,255,20,0.1)"
+                    : "rgba(248,113,113,0.12)",
+            trendBorder:
+                averageMatrixHitTrend === null || averageMatrixHitTrend >= 0
+                    ? "1px solid rgba(57,255,20,0.16)"
+                    : "1px solid rgba(248,113,113,0.2)",
+            tooltipAlign: "right",
+            tooltip: "This is the average probability the AI assigned to all the actual real world results for this gameweek.",
+            value: formatDashboardPercentage(metrics.averageMatrixHit),
+        },
+    ];
 
     return (
         <div className="rounded-2xl overflow-hidden mb-8"
             style={{ background: "rgba(17,34,64,0.97)", border: "1px solid rgba(57,255,20,0.12)" }}>
 
-            <div className="px-6 pt-6 pb-5">
-                <div className="flex items-center gap-6">
-
-                    {/* Circular ring */}
-                    <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
-                        <svg width="130" height="130" viewBox="0 0 130 130">
-                            {/* Background ring */}
-                            <circle
-                                cx="65" cy="65" r={radius}
-                                fill="none"
-                                stroke="rgba(255,255,255,0.06)"
-                                strokeWidth="8"
-                            />
-                            {/* Progress ring */}
-                            <motion.circle
-                                cx="65" cy="65" r={radius}
-                                fill="none"
-                                stroke="#39FF14"
-                                strokeWidth="8"
-                                strokeLinecap="round"
-                                strokeDasharray={circumference}
-                                initial={{ strokeDashoffset: circumference }}
-                                animate={{ strokeDashoffset: circumference - strokeDash }}
-                                transition={{ duration: 1.2, ease: "easeOut" }}
-                                transform="rotate(-90 65 65)"
-                            />
-                        </svg>
-                        {/* Center text */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center">
-                            <span className="text-3xl font-bold text-mint font-mono leading-none">{pct}%</span>
-                            <span className="text-[10px] font-mono mt-1" style={{ color: "rgba(255,255,255,0.25)" }}>accurate</span>
-                        </div>
-                    </div>
-
-                    {/* Stats */}
-                    <div className="flex-1">
+            <div className="px-8 py-8 md:px-10 md:py-10">
+                <div className="space-y-8">
+                    <div>
                         <span className="text-[9px] font-bold uppercase tracking-[0.25em] font-mono block mb-1" style={{ color: "rgba(57,255,20,0.55)" }}>
                             The Gaffer&apos;s Record
                         </span>
-                        <p className="text-[11px] font-mono mb-4" style={{ color: "rgba(255,255,255,0.3)" }}>
-                            {hasPerformance ? "Outcome prediction accuracy" : "No completed predictions yet"}
+                        <p className="text-[11px] font-mono" style={{ color: "rgba(255,255,255,0.3)" }}>
+                            {hasFinishedMatches
+                                ? `Probability hits on real scorelines for GW ${gameweek}`
+                                : `No finished matches in GW ${gameweek} yet`}
                         </p>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(57,255,20,0.07)", border: "1px solid rgba(57,255,20,0.1)" }}>
-                                <div className="text-xl font-bold text-mint font-mono">{correct}</div>
-                                <div className="text-[9px] font-mono mt-0.5 uppercase tracking-wider" style={{ color: "rgba(57,255,20,0.45)" }}>Correct</div>
+                    <div className="grid gap-8 md:grid-cols-3">
+                        {metricCards.map((card) => (
+                            <div
+                                key={card.label}
+                                className="flex min-h-[188px] flex-col rounded-[28px] p-8"
+                                style={{
+                                    background: card.accent,
+                                    border: `1px solid ${card.border}`,
+                                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03), 0 16px 32px rgba(4,10,22,0.12)",
+                                }}
+                            >
+                                <div className="flex items-center gap-1">
+                                    <div className="text-[10px] font-bold uppercase tracking-[0.3em] font-mono leading-[1.7]" style={{ color: "rgba(255,255,255,0.34)" }}>
+                                        {card.label}
+                                    </div>
+                                    <InfoTooltip content={card.tooltip} align={card.tooltipAlign as "center" | "right"} />
+                                </div>
+                                <div className="mt-6 flex flex-wrap items-center gap-3">
+                                    <div className={`text-[2.2rem] font-bold font-mono leading-none ${card.tone}`}>
+                                        {card.value}
+                                    </div>
+                                    {card.trendText && (
+                                        <div
+                                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[9px] font-mono font-bold uppercase tracking-[0.16em]"
+                                            style={{
+                                                background: card.trendSurface,
+                                                border: card.trendBorder,
+                                                color: card.trendTone,
+                                            }}
+                                        >
+                                            <span aria-hidden="true">{card.trendText.startsWith("down") ? "↓" : "↑"}</span>
+                                            <span>{card.trendText}</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-5 text-[10px] font-mono uppercase tracking-[0.24em] leading-[1.7]" style={{ color: card.countTone }}>
+                                    {hasFinishedMatches ? `${metrics.finishedCount} finished matches` : "Awaiting full-time data"}
+                                </div>
+                                {card.footer && (
+                                    <div className="mt-auto flex items-center justify-between gap-3 border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                                        <div className="min-w-0 text-[10px] font-mono uppercase tracking-[0.18em] leading-[1.5]" style={{ color: "rgba(255,255,255,0.26)" }}>
+                                            {card.footer.homeTeam} vs {card.footer.awayTeam}
+                                        </div>
+                                        <div className="flex shrink-0 items-center gap-1.5">
+                                            <TeamCrest team={card.footer.homeTeam} logoUrl={card.footer.homeLogo} size={16} />
+                                            <span className="text-[9px] font-mono uppercase tracking-[0.18em]" style={{ color: "rgba(255,255,255,0.2)" }}>
+                                                v
+                                            </span>
+                                            <TeamCrest team={card.footer.awayTeam} logoUrl={card.footer.awayLogo} size={16} />
+                                        </div>
+                                    </div>
+                                )}
+                                {!card.footer && card.footerText && (
+                                    <div className="mt-auto border-t pt-4" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
+                                        <div className="text-[10px] font-mono uppercase tracking-[0.18em] leading-[1.5]" style={{ color: "rgba(255,255,255,0.26)" }}>
+                                            {card.footerText}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                                <div className="text-xl font-bold text-white font-mono">{total - correct}</div>
-                                <div className="text-[9px] font-mono mt-0.5 uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>Wrong</div>
-                            </div>
-                        </div>
-
-                        <div className="mt-2 rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                            <div className="text-xl font-bold text-white font-mono">{total}</div>
-                            <div className="text-[9px] font-mono mt-0.5 uppercase tracking-wider" style={{ color: "rgba(255,255,255,0.25)" }}>Total predictions</div>
-                        </div>
+                        ))}
                     </div>
                 </div>
             </div>
@@ -1017,7 +1437,9 @@ function FloatingGafferChat({ predictions }: { predictions: Prediction[] }) {
     );
 }
 
-export default function GafferClient({ user, fixtures, performance }: GafferClientProps) {
+export default function GafferClient(props: GafferClientProps) {
+    const { user, fixtures } = props;
+
     const getFixtureGameweek = (fixture: CombinedFixture) => {
         const candidates = [
             fixture.gameweek_id,
@@ -1092,17 +1514,33 @@ export default function GafferClient({ user, fixtures, performance }: GafferClie
     const currentRealGameweek = getCurrentRealGameweek();
     const gameweekStatusLabel = getGameweekStatusLabel(currentRealGameweek);
     const predictions = fixtures.filter(isFixturePredicted);
-    const filteredFixtures = fixtures.filter(
-        (fixture) => {
+    const getFixturesForGameweek = (gameweek: number) =>
+        fixtures.filter((fixture) => {
             const gw =
                 fixture.gameweek_id ||
                 fixture.gameweek ||
                 fixture.matchday ||
                 fixture.prediction?.gameweek ||
                 fixture.performance?.gameweek;
-            return Number(gw) === Number(selectedGameweek);
-        },
-    );
+            return Number(gw) === Number(gameweek);
+        });
+
+    const filteredFixtures = getFixturesForGameweek(selectedGameweek);
+    const selectedGameweekMetrics = calculateGameweekMatrixMetrics(filteredFixtures);
+    let previousTrackedMetrics: GameweekMatrixMetrics | null = null;
+
+    for (let gameweek = selectedGameweek - 1; gameweek >= 1; gameweek -= 1) {
+        const previousMetrics = calculateGameweekMatrixMetrics(getFixturesForGameweek(gameweek));
+        if (previousMetrics.finishedCount > 0) {
+            previousTrackedMetrics = previousMetrics;
+            break;
+        }
+    }
+
+    const averageMatrixHitTrend =
+        selectedGameweekMetrics.finishedCount > 0 && previousTrackedMetrics
+            ? selectedGameweekMetrics.averageMatrixHit - previousTrackedMetrics.averageMatrixHit
+            : null;
     const selectedFixtures = filteredFixtures
         .filter((fixture) => isFixturePredicted(fixture) || new Date(fixture.kickoff_time) > new Date())
         .sort((a, b) => new Date(a.kickoff_time).getTime() - new Date(b.kickoff_time).getTime());
@@ -1126,7 +1564,11 @@ export default function GafferClient({ user, fixtures, performance }: GafferClie
                 </div>
 
                 {/* Performance tracker */}
-                <PerformanceTracker performance={performance} />
+                <PerformanceTracker
+                    metrics={selectedGameweekMetrics}
+                    gameweek={selectedGameweek}
+                    averageMatrixHitTrend={averageMatrixHitTrend}
+                />
 
                 <div className="mb-8 flex items-center justify-center gap-4">
                     <button
@@ -1196,6 +1638,10 @@ export default function GafferClient({ user, fixtures, performance }: GafferClie
                                         analysis_text: fixture.analysis_text ?? null,
                                     }}
                                     isPast={isPast}
+                                    isMatchOfTheWeek={
+                                        selectedGameweekMetrics.highestMatrixHit > 0 &&
+                                        selectedGameweekMetrics.highestHitFixtureIds.includes(fixture.fixture_id)
+                                    }
                                 />
                             );
                         })}
