@@ -102,12 +102,6 @@ export default function ManagerProfileClient({
                                     <h1 className="truncate text-[2rem] font-black leading-none text-white md:text-[2.5rem]">
                                         {summary.nickname}
                                     </h1>
-                                    <p
-                                        className="mt-2 max-w-xl text-sm leading-6"
-                                        style={{ color: "rgba(255, 255, 255, 0.8)" }}
-                                    >
-                                        Career totals, live rank context, and a read-only archive of completed prediction weeks.
-                                    </p>
                                     {!favoriteClub && isOwnProfile && (
                                         <Link
                                             href="/settings"
