@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/actions";
+import { measureServerTask } from "@/lib/performance";
 import { createAdminClient } from "@/lib/supabase/admin";
 import GafferClient from "./GafferClient";
 
@@ -14,20 +15,22 @@ export default async function GafferPage() {
         { data: fixtures },
         { data: predictions },
         { data: performance },
-    ] = await Promise.all([
-        supabase
-            .from("fixtures")
-            .select("*")
-            .order("kickoff_time", { ascending: true }),
-        supabase
-            .from("gaffer_predictions")
-            .select("*")
-            .order("kickoff_time", { ascending: true }),
-        supabase
-            .from("gaffer_performance")
-            .select("*")
-            .order("created_at", { ascending: false }),
-    ]);
+    ] = await measureServerTask("gaffer:initialData", () =>
+        Promise.all([
+            supabase
+                .from("fixtures")
+                .select("*")
+                .order("kickoff_time", { ascending: true }),
+            supabase
+                .from("gaffer_predictions")
+                .select("*")
+                .order("kickoff_time", { ascending: true }),
+            supabase
+                .from("gaffer_performance")
+                .select("*")
+                .order("created_at", { ascending: false }),
+        ])
+    );
 
     const normalizeKey = (value: unknown) => {
         if (value === null || value === undefined) return null;

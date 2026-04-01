@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import TeamCrest from "@/app/components/TeamCrest";
 import {
     getFixtureStatusLabel,
     isFixtureFullTime,
@@ -169,9 +170,13 @@ export default function MatchCard({
 
             <div className="flex items-center justify-between px-3 py-3 md:px-5 md:py-4">
                 <div className="flex w-10 shrink-0 flex-col items-center gap-1 md:w-20">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[8px] font-bold text-white/80 md:h-12 md:w-12 md:text-xs">
-                        {homeLogo ? <img src={homeLogo} alt={homeShort} className="h-6 w-6 object-contain md:h-8 md:w-8" /> : homeShort}
-                    </div>
+                    <TeamCrest
+                        short={homeShort}
+                        logo={homeLogo}
+                        sizeClassName="h-9 w-9 md:h-12 md:w-12"
+                        imageClassName="h-6 w-6 object-contain md:h-8 md:w-8"
+                        fallbackTextClassName="text-[8px] font-bold text-white/80 md:text-xs"
+                    />
                     <span className="team-label text-center text-[8px] font-semibold leading-tight text-white/70 md:hidden md:text-[10px]">{homeShort}</span>
                     <span className="team-label hidden text-center text-[10px] font-semibold leading-tight text-white/80 md:block">{homeTeam}</span>
                 </div>
@@ -207,9 +212,13 @@ export default function MatchCard({
                 </div>
 
                 <div className="flex w-10 shrink-0 flex-col items-center gap-1 md:w-20">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 text-[8px] font-bold text-white/80 md:h-12 md:w-12 md:text-xs">
-                        {awayLogo ? <img src={awayLogo} alt={awayShort} className="h-6 w-6 object-contain md:h-8 md:w-8" /> : awayShort}
-                    </div>
+                    <TeamCrest
+                        short={awayShort}
+                        logo={awayLogo}
+                        sizeClassName="h-9 w-9 md:h-12 md:w-12"
+                        imageClassName="h-6 w-6 object-contain md:h-8 md:w-8"
+                        fallbackTextClassName="text-[8px] font-bold text-white/80 md:text-xs"
+                    />
                     <span className="team-label text-center text-[8px] font-semibold leading-tight text-white/70 md:hidden md:text-[10px]">{awayShort}</span>
                     <span className="team-label hidden text-center text-[10px] font-semibold leading-tight text-white/80 md:block">{awayTeam}</span>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
 import GameweekNav from "@/app/components/GameweekNav";
@@ -8,8 +9,7 @@ import Footer from "@/app/components/Footer";
 import {
     type LeaderboardEntry,
     type GameweekData,
-    getLeaderboard,
-    getUserLeaderboardEntry,
+    getLeaderboardViewData,
 } from "@/lib/actions";
 
 const PAGE_SIZE = 10;
@@ -45,37 +45,75 @@ function RankBadge({ rank }: { rank: number }) {
 }
 
 // ── Player Row (Memoized) ──
-const PlayerRow = React.memo(function PlayerRow({ player, currentUserId, isAdmin = false }: { player: LeaderboardEntry; currentUserId: string; isAdmin?: boolean }) {
+const PlayerRow = React.memo(function PlayerRow({
+    player,
+    currentUserId,
+    isAdmin = false,
+    isNavigating = false,
+    onNavigate,
+}: {
+    player: LeaderboardEntry;
+    currentUserId: string;
+    isAdmin?: boolean;
+    isNavigating?: boolean;
+    onNavigate?: (nickname: string) => void;
+}) {
     // If it's the current user AND they are NOT an admin, they get the highlight styling.
     const isCurrentUser = player.user_id === currentUserId && !isAdmin;
+    const href = `/manager/${encodeURIComponent(player.nickname)}`;
 
     return (
-        <motion.div
-            variants={{
-                hidden: { opacity: 0, y: 15 },
-                visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 100 } }
+        <Link
+            href={href}
+            onPointerDown={() => onNavigate?.(player.nickname)}
+            onTouchStart={() => onNavigate?.(player.nickname)}
+            onClick={() => onNavigate?.(player.nickname)}
+            onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                    onNavigate?.(player.nickname);
+                }
             }}
-            className={`glass-card flex items-center rounded-lg px-3 py-3 md:px-4 md:py-3.5 ${isCurrentUser ? "card-active" : "border border-white/5"}`}
+            className="block rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-mint/70"
+            aria-label={`View ${player.nickname}'s manager profile`}
         >
-            <div className="flex w-12 shrink-0 items-center gap-1 md:w-16">
-                <RankBadge rank={player.current_rank} />
-                <TrendArrow current={player.current_rank} previous={player.previous_rank} />
-            </div>
-            <div className="flex flex-1 items-center gap-2.5 min-w-0">
-                <div className={`flex h-7 w-7 md:h-8 md:w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isCurrentUser ? "bg-mint text-navy" : "bg-white/10 text-white/60"}`}>
-                    {player.nickname.charAt(0).toUpperCase()}
+            <motion.div
+                variants={{
+                    hidden: { opacity: 0, y: 15 },
+                    visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 20, stiffness: 100 } }
+                }}
+                whileTap={{ scale: 0.988 }}
+                className={`glass-card flex items-center rounded-lg px-3 py-3 transition-all duration-150 md:px-4 md:py-3.5 ${
+                    isCurrentUser ? "card-active" : "border border-white/5"
+                } ${isNavigating ? "border-mint/30 bg-white/[0.03] opacity-85" : ""}`}
+            >
+                <div className="flex w-12 shrink-0 items-center gap-1 md:w-16">
+                    <RankBadge rank={player.current_rank} />
+                    <TrendArrow current={player.current_rank} previous={player.previous_rank} />
                 </div>
-                <span className={`text-xs md:text-sm font-semibold truncate ${isCurrentUser ? "text-mint" : "text-white/80"}`}>
-                    {player.nickname}
-                    {isCurrentUser && <span className="ml-1.5 text-[9px] font-normal text-mint/60">(You)</span>}
-                </span>
-            </div>
-            <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">{player.exact_scores}</div>
-            <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">
-                {Math.floor((player.total_points - player.exact_scores * 30) / 20)}
-            </div>
-            <div className={`w-16 text-right text-sm font-black md:w-20 md:text-base ${isCurrentUser ? "text-mint" : "text-white"}`}>{player.total_points}</div>
-        </motion.div>
+                <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                    <div className={`flex h-7 w-7 md:h-8 md:w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isCurrentUser ? "bg-mint text-navy" : "bg-white/10 text-white/60"}`}>
+                        {player.nickname.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <span className={`block truncate text-xs font-semibold md:text-sm ${isCurrentUser ? "text-mint" : "text-white/80"}`}>
+                            {player.nickname}
+                            {isCurrentUser && <span className="ml-1.5 text-[9px] font-normal text-mint/60">(You)</span>}
+                        </span>
+                        <span
+                            className={`mt-1 block h-[2px] rounded-full bg-mint transition-all duration-150 ${
+                                isNavigating ? "w-10 opacity-100" : "w-0 opacity-0"
+                            }`}
+                            aria-hidden="true"
+                        />
+                    </div>
+                </div>
+                <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">{player.exact_scores}</div>
+                <div className="hidden w-16 text-center text-xs font-medium text-white/50 md:block">
+                    {Math.floor((player.total_points - player.exact_scores * 30) / 20)}
+                </div>
+                <div className={`w-16 text-right text-sm font-black md:w-20 md:text-base ${isCurrentUser ? "text-mint" : "text-white"}`}>{player.total_points}</div>
+            </motion.div>
+        </Link>
     );
 });
 
@@ -198,6 +236,7 @@ export default function LeaderboardClient({
     const [entries, setEntries] = useState(initialEntries);
     const [totalCount, setTotalCount] = useState(initialTotalCount);
     const [userEntry, setUserEntry] = useState(initialUserEntry);
+    const [navigatingNickname, setNavigatingNickname] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
@@ -212,13 +251,10 @@ export default function LeaderboardClient({
 
     const fetchData = (type: "global" | "weekly", gameweekId: number | null, page: number) => {
         startTransition(async () => {
-            const [result, userResult] = await Promise.all([
-                getLeaderboard(type, gameweekId, page, PAGE_SIZE),
-                getUserLeaderboardEntry(type, gameweekId),
-            ]);
+            const result = await getLeaderboardViewData(type, gameweekId, page, PAGE_SIZE);
             setEntries(result.entries);
             setTotalCount(result.totalCount);
-            setUserEntry(userResult);
+            setUserEntry(result.userEntry);
         });
     };
 
@@ -337,7 +373,14 @@ export default function LeaderboardClient({
                         }}
                     >
                         {entries.map((player) => (
-                            <PlayerRow key={player.user_id} player={player} currentUserId={currentUserId} isAdmin={isAdmin} />
+                            <PlayerRow
+                                key={player.user_id}
+                                player={player}
+                                currentUserId={currentUserId}
+                                isAdmin={isAdmin}
+                                isNavigating={navigatingNickname === player.nickname}
+                                onNavigate={setNavigatingNickname}
+                            />
                         ))}
                     </motion.div>
 
@@ -354,7 +397,13 @@ export default function LeaderboardClient({
             {!isAdmin && !userOnPage && userEntry && (
                 <div className="pinned-row px-3 py-2.5 md:px-6">
                     <div className="mx-auto max-w-3xl">
-                        <PlayerRow player={userEntry} currentUserId={currentUserId} isAdmin={isAdmin} />
+                        <PlayerRow
+                            player={userEntry}
+                            currentUserId={currentUserId}
+                            isAdmin={isAdmin}
+                            isNavigating={navigatingNickname === userEntry.nickname}
+                            onNavigate={setNavigatingNickname}
+                        />
                     </div>
                 </div>
             )}

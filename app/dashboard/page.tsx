@@ -2,64 +2,66 @@ import { redirect } from "next/navigation";
 import DashboardClient from "@/app/components/DashboardClient";
 import {
     getCurrentUser,
-    getGameweeks,
     getFixtures,
+    getGameweeks,
     getUserPredictions,
 } from "@/lib/actions";
+import { measureServerTask } from "@/lib/performance";
 import { createClient } from "@/lib/supabase/server";
 
-// Disable Next.js data cache — always fetch fresh fixture data
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
     const user = await getCurrentUser();
     if (!user || !user.nickname) redirect("/");
 
-    const gameweeks = await getGameweeks();
-
-    // ── 14-day rule: find the lowest GW with a match kicking off within 14 days ──
+    const gameweeks = await measureServerTask("dashboard:getGameweeks", () => getGameweeks());
     const supabase = await createClient();
     const now = new Date();
     const fourteenDaysFromNow = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-    let currentGw = null;
+    let currentGw =
+        gameweeks.find((g) => g.is_current) ??
+        gameweeks[gameweeks.length - 1] ??
+        null;
 
-    // Primary: lowest GW with an upcoming match within 14 days
-    for (const gw of gameweeks) {
-        const { data: upcomingFixtures } = await supabase
+    const { data: upcomingFixture, error: upcomingError } = await supabase
+        .from("fixtures")
+        .select("gameweek_id")
+        .gt("kickoff_time", now.toISOString())
+        .lte("kickoff_time", fourteenDaysFromNow.toISOString())
+        .order("gameweek_id", { ascending: true })
+        .order("kickoff_time", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+    if (upcomingError) {
+        throw new Error(upcomingError.message);
+    }
+
+    if (upcomingFixture?.gameweek_id) {
+        currentGw =
+            gameweeks.find((gw) => gw.id === upcomingFixture.gameweek_id) ??
+            currentGw;
+    } else {
+        const { data: finishedFixture, error: finishedError } = await supabase
             .from("fixtures")
-            .select("id")
-            .eq("gameweek_id", gw.id)
-            .gt("kickoff_time", now.toISOString())
-            .lte("kickoff_time", fourteenDaysFromNow.toISOString())
-            .limit(1);
+            .select("gameweek_id")
+            .in("status", ["FINISHED", "AWARDED"])
+            .order("gameweek_id", { ascending: false })
+            .order("kickoff_time", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        if (upcomingFixtures && upcomingFixtures.length > 0) {
-            currentGw = gw;
-            break;
+        if (finishedError) {
+            throw new Error(finishedError.message);
         }
-    }
 
-    // Fallback: most recently completed gameweek
-    if (!currentGw) {
-        for (const gw of [...gameweeks].reverse()) {
-            const { data: finishedFixtures } = await supabase
-                .from("fixtures")
-                .select("id")
-                .eq("gameweek_id", gw.id)
-                .in("status", ["FINISHED", "AWARDED"])
-                .limit(1);
-
-            if (finishedFixtures && finishedFixtures.length > 0) {
-                currentGw = gw;
-                break;
-            }
+        if (finishedFixture?.gameweek_id) {
+            currentGw =
+                gameweeks.find((gw) => gw.id === finishedFixture.gameweek_id) ??
+                currentGw;
         }
-    }
-
-    // Last resort: is_current flag or last gameweek
-    if (!currentGw) {
-        currentGw = gameweeks.find((g) => g.is_current) ?? gameweeks[gameweeks.length - 1];
     }
 
     if (!currentGw) {
@@ -70,10 +72,9 @@ export default async function DashboardPage() {
         );
     }
 
-    const [fixtures, predictions] = await Promise.all([
-        getFixtures(currentGw.id),
-        getUserPredictions(currentGw.id),
-    ]);
+    const [fixtures, predictions] = await measureServerTask("dashboard:initialData", () =>
+        Promise.all([getFixtures(currentGw.id), getUserPredictions(currentGw.id)])
+    );
 
     return (
         <DashboardClient

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
+import SharedTeamCrest from "@/app/components/TeamCrest";
 
 interface Prediction {
     fixture_id: string;
@@ -251,19 +252,17 @@ const TEAM_CRESTS: Record<string, string> = {
 };
 
 function TeamCrest({ team, logoUrl, size = 44 }: { team: string; logoUrl?: string | null; size?: number }) {
-    const [error, setError] = useState(false);
     const src = logoUrl || TEAM_CRESTS[team];
-    if (!src || error) {
-        return (
-            <div className="rounded-full bg-white/10 flex items-center justify-center font-mono font-bold text-white/50 text-[10px]"
-                style={{ width: size, height: size, minWidth: size }}>
-                {team.slice(0, 3).toUpperCase()}
-            </div>
-        );
-    }
     return (
-        <img src={src} alt={team} onError={() => setError(true)}
-            style={{ width: size, height: size, minWidth: size, objectFit: "contain" }} />
+        <SharedTeamCrest
+            short={team.slice(0, 3).toUpperCase()}
+            logo={src}
+            sizeClassName=""
+            imageClassName="h-full w-full object-contain p-1"
+            fallbackTextClassName="font-mono font-bold text-white/50 text-[10px]"
+            wrapperClassName="bg-white/10"
+            wrapperStyle={{ width: size, height: size, minWidth: size }}
+        />
     );
 }
 
