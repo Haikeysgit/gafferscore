@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import DashboardHeader from "@/app/components/DashboardHeader";
@@ -50,13 +50,17 @@ const PlayerRow = React.memo(function PlayerRow({
     currentUserId,
     isAdmin = false,
     isNavigating = false,
+    onTouchPreview,
     onNavigate,
+    onClearPreview,
 }: {
     player: LeaderboardEntry;
     currentUserId: string;
     isAdmin?: boolean;
     isNavigating?: boolean;
+    onTouchPreview?: (nickname: string) => void;
     onNavigate?: (nickname: string) => void;
+    onClearPreview?: () => void;
 }) {
     // If it's the current user AND they are NOT an admin, they get the highlight styling.
     const isCurrentUser = player.user_id === currentUserId && !isAdmin;
@@ -65,8 +69,11 @@ const PlayerRow = React.memo(function PlayerRow({
     return (
         <Link
             href={href}
-            onPointerDown={() => onNavigate?.(player.nickname)}
-            onTouchStart={() => onNavigate?.(player.nickname)}
+            data-leaderboard-row="true"
+            onPointerDown={() => onTouchPreview?.(player.nickname)}
+            onTouchStart={() => onTouchPreview?.(player.nickname)}
+            onTouchMove={() => onClearPreview?.()}
+            onPointerCancel={() => onClearPreview?.()}
             onClick={() => onNavigate?.(player.nickname)}
             onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
@@ -236,10 +243,13 @@ export default function LeaderboardClient({
     const [entries, setEntries] = useState(initialEntries);
     const [totalCount, setTotalCount] = useState(initialTotalCount);
     const [userEntry, setUserEntry] = useState(initialUserEntry);
+    const [activeTouchNickname, setActiveTouchNickname] = useState<string | null>(null);
     const [navigatingNickname, setNavigatingNickname] = useState<string | null>(null);
     const [isPending, startTransition] = useTransition();
+    const clearPreviewTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const highlightedNickname = navigatingNickname ?? activeTouchNickname;
 
     // Is the current user visible on this page?
     const userOnPage = entries.some((e) => e.user_id === currentUserId);
@@ -285,6 +295,72 @@ export default function LeaderboardClient({
         setCurrentPage(1);
         fetchData("weekly", newGw.id, 1);
     };
+
+    const clearTouchPreview = () => {
+        if (clearPreviewTimeoutRef.current) {
+            clearTimeout(clearPreviewTimeoutRef.current);
+            clearPreviewTimeoutRef.current = null;
+        }
+        setActiveTouchNickname(null);
+    };
+
+    const previewManager = (nickname: string) => {
+        if (clearPreviewTimeoutRef.current) {
+            clearTimeout(clearPreviewTimeoutRef.current);
+            clearPreviewTimeoutRef.current = null;
+        }
+        setActiveTouchNickname(nickname);
+    };
+
+    const navigateToManager = (nickname: string) => {
+        if (clearPreviewTimeoutRef.current) {
+            clearTimeout(clearPreviewTimeoutRef.current);
+            clearPreviewTimeoutRef.current = null;
+        }
+        setActiveTouchNickname(nickname);
+        setNavigatingNickname(nickname);
+    };
+
+    useEffect(() => {
+        const clearIfOutsideRow = (event: PointerEvent | TouchEvent) => {
+            const target = event.target;
+            if (!(target instanceof Element)) return;
+            if (!target.closest("[data-leaderboard-row='true']")) {
+                clearTouchPreview();
+            }
+        };
+
+        const schedulePreviewClear = () => {
+            if (clearPreviewTimeoutRef.current) {
+                clearTimeout(clearPreviewTimeoutRef.current);
+            }
+
+            clearPreviewTimeoutRef.current = setTimeout(() => {
+                setActiveTouchNickname((current) =>
+                    current === navigatingNickname ? current : null
+                );
+                clearPreviewTimeoutRef.current = null;
+            }, 120);
+        };
+
+        window.addEventListener("scroll", clearTouchPreview, { passive: true });
+        document.addEventListener("pointerdown", clearIfOutsideRow, true);
+        document.addEventListener("touchstart", clearIfOutsideRow, true);
+        document.addEventListener("pointerup", schedulePreviewClear, true);
+        document.addEventListener("touchend", schedulePreviewClear, true);
+
+        return () => {
+            window.removeEventListener("scroll", clearTouchPreview);
+            document.removeEventListener("pointerdown", clearIfOutsideRow, true);
+            document.removeEventListener("touchstart", clearIfOutsideRow, true);
+            document.removeEventListener("pointerup", schedulePreviewClear, true);
+            document.removeEventListener("touchend", schedulePreviewClear, true);
+
+            if (clearPreviewTimeoutRef.current) {
+                clearTimeout(clearPreviewTimeoutRef.current);
+            }
+        };
+    }, [navigatingNickname]);
 
     return (
         <div className="flex min-h-screen flex-col bg-navy">
@@ -378,8 +454,10 @@ export default function LeaderboardClient({
                                 player={player}
                                 currentUserId={currentUserId}
                                 isAdmin={isAdmin}
-                                isNavigating={navigatingNickname === player.nickname}
-                                onNavigate={setNavigatingNickname}
+                                isNavigating={highlightedNickname === player.nickname}
+                                onTouchPreview={previewManager}
+                                onNavigate={navigateToManager}
+                                onClearPreview={clearTouchPreview}
                             />
                         ))}
                     </motion.div>
@@ -401,8 +479,10 @@ export default function LeaderboardClient({
                             player={userEntry}
                             currentUserId={currentUserId}
                             isAdmin={isAdmin}
-                            isNavigating={navigatingNickname === userEntry.nickname}
-                            onNavigate={setNavigatingNickname}
+                            isNavigating={highlightedNickname === userEntry.nickname}
+                            onTouchPreview={previewManager}
+                            onNavigate={navigateToManager}
+                            onClearPreview={clearTouchPreview}
                         />
                     </div>
                 </div>
