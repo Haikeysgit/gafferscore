@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 
 const fadeLeft = {
     hidden: { opacity: 0, x: -30 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: "easeOut" } },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: "easeOut" as const } },
 };
 
 const fadeRight = {
     hidden: { opacity: 0, x: 30 },
-    visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: "easeOut" } },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.65, ease: "easeOut" as const } },
 };
 
 const CHIPS = [
