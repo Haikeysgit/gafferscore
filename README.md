@@ -43,9 +43,34 @@ Open [http://localhost:3000](http://localhost:3000) in your browser to view the 
 
 ## 5. Required Environment Variables
 
-To securely connect your local build to your Supabase instance, you must supply the following environment variables in your `.env.local` file. You can find these credentials in your Supabase project dashboard under **Project Settings > API**.
+Create `.env.local` from the included example file:
+
+```bash
+cp .env.example .env.local
+```
+
+At minimum, local Supabase-backed development needs:
 
 ```plaintext
 NEXT_PUBLIC_SUPABASE_URL="insert_your_supabase_project_url"
 NEXT_PUBLIC_SUPABASE_ANON_KEY="insert_your_supabase_anon_key"
 ```
+
+The app also references server-side keys for admin syncs, email, football data, and the AI Gaffer chat. Keep these private and never expose service-role/API keys in client components:
+
+```plaintext
+SUPABASE_SERVICE_ROLE_KEY="insert_your_supabase_service_role_key"
+SYNC_SECRET="insert_a_long_random_secret"
+FOOTBALL_DATA_API_KEY="insert_your_football_data_api_key"
+GROQ_API_KEY="insert_your_groq_api_key"
+RESEND_API_KEY="insert_your_resend_api_key"
+NEXT_PUBLIC_SITE_URL="https://www.gafferscore.xyz"
+JWT_SECRET="insert_a_long_random_secret_if_required"
+```
+
+## 6. Vanta Notes
+
+A tiny love letter and lightweight code audit were added under `docs/`:
+
+- [`docs/VANTA_LOVE_LETTER.md`](docs/VANTA_LOVE_LETTER.md)
+- [`docs/VANTA_CODE_AUDIT.md`](docs/VANTA_CODE_AUDIT.md)
